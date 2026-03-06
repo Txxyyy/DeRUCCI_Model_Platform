@@ -1,0 +1,10 @@
+
+The following files have been resolved:
+   org.springframework.boot:spring-boot-starter:jar:3.2.0:compile[36m -- module spring.boot.starter[0;1m [auto][m
+   org.springframework.boot:spring-boot-starter-web:jar:3.2.0:compile[36m -- module spring.boot.starter.web[0;1m [auto][m
+   jakarta.validation:jakarta.validation-api:jar:3.0.2:compile[36m -- module jakarta.validation[m
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.15.3:compile[36m -- module com.fasterxml.jackson.annotation[m
+   org.springframework.boot:spring-boot-starter-test:jar:3.2.0:test[36m -- module spring.boot.starter.test[0;1m [auto][m
+   org.junit.jupiter:junit-jupiter:jar:5.10.1:test[36m -- module org.junit.jupiter[m
+   org.assertj:assertj-core:jar:3.24.2:test[36m -- module org.assertj.core[m
+

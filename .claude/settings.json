@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn test -Dtest=UserTest -pl service/user-service -am)",
+      "Bash(mvn install -DskipTests)",
+      "Bash(npm install)",
+      "Bash(mvn clean install -DskipTests)"
+    ]
+  }
+}

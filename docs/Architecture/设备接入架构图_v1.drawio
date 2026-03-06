@@ -1,0 +1,156 @@
+<mxGraphModel dx="1424" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <!-- 标题 -->
+    <mxCell id="title" value="慕思物模型平台 - 设备接入架构图" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1A5FE0;" vertex="1" parent="1">
+      <mxGeometry x="300" y="20" width="400" height="40" as="geometry"/>
+    </mxCell>
+
+    <!-- 设备终端 -->
+    <mxCell id="devices" value="设备终端 (Devices)" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;startSize=30;fontStyle=1;fontColor=#1976D2;" vertex="1" parent="1">
+      <mxGeometry x="40" y="80" width="180" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="smart_bed" value="智能床垫" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1976D2;fontColor=#333333;" vertex="1" parent="devices">
+      <mxGeometry x="20" y="40" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="smart_pillow" value="智能枕头" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1976D2;fontColor=#333333;" vertex="1" parent="devices">
+      <mxGeometry x="20" y="90" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="monitor" value="监测设备" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1976D2;fontColor=#333333;" vertex="1" parent="devices">
+      <mxGeometry x="20" y="140" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="sensor" value="传感器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1976D2;fontColor=#333333;" vertex="1" parent="devices">
+      <mxGeometry x="20" y="190" width="100" height="40" as="geometry"/>
+    </mxCell>
+
+    <!-- 协议适配层 -->
+    <mxCell id="protocol_layer" value="协议适配层" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;startSize=30;fontStyle=1;fontColor=#E65100;" vertex="1" parent="1">
+      <mxGeometry x="240" y="80" width="200" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="mqtt_adapter" value="MQTT Server&#xa;:1883/8883" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E65100;fontColor=#333333;" vertex="1" parent="protocol_layer">
+      <mxGeometry x="20" y="40" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="coap_adapter" value="CoAP Gateway&#xa;:5683/5684" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E65100;fontColor=#333333;" vertex="1" parent="protocol_layer">
+      <mxGeometry x="20" y="110" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="http_adapter" value="HTTP Server&#xa;:8080/8443" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E65100;fontColor=#333333;" vertex="1" parent="protocol_layer">
+      <mxGeometry x="20" y="180" width="160" height="50" as="geometry"/>
+    </mxCell>
+
+    <!-- 消息路由层 -->
+    <mxCell id="router_layer" value="消息路由层" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C2185B;startSize=30;fontStyle=1;fontColor=#C2185B;" vertex="1" parent="1">
+      <mxGeometry x="460" y="80" width="180" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="message_router" value="Message Router&#xa;消息解析/路由" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C2185B;fontColor=#333333;" vertex="1" parent="router_layer">
+      <mxGeometry x="20" y="50" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="device_auth" value="Device Auth&#xa;设备认证" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C2185B;fontColor=#333333;" vertex="1" parent="router_layer">
+      <mxGeometry x="20" y="130" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="schema_validator" value="Schema Validator&#xa;消息校验" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C2185B;fontColor=#333333;" vertex="1" parent="router_layer">
+      <mxGeometry x="20" y="200" width="140" height="50" as="geometry"/>
+    </mxCell>
+
+    <!-- Kafka消息队列 -->
+    <mxCell id="kafka_cluster" value="Kafka Cluster" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;startSize=30;fontStyle=1;fontColor=#388E3C;" vertex="1" parent="1">
+      <mxGeometry x="660" y="80" width="160" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="topic_property" value="topic: device.property" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontColor=#333333;" vertex="1" parent="kafka_cluster">
+      <mxGeometry x="20" y="40" width="120" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="topic_event" value="topic: device.event" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontColor=#333333;" vertex="1" parent="kafka_cluster">
+      <mxGeometry x="20" y="80" width="120" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="topic_command" value="topic: device.command" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontColor=#333333;" vertex="1" parent="kafka_cluster">
+      <mxGeometry x="20" y="120" width="120" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="topic_ota" value="topic: device.ota" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontColor=#333333;" vertex="1" parent="kafka_cluster">
+      <mxGeometry x="20" y="160" width="120" height="30" as="geometry"/>
+    </mxCell>
+
+    <!-- 数据处理层 -->
+    <mxCell id="processor_layer" value="数据处理层" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;startSize=30;fontStyle=1;fontColor=#7B1FA2;" vertex="1" parent="1">
+      <mxGeometry x="840" y="80" width="160" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="property_handler" value="Property Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontColor=#333333;" vertex="1" parent="processor_layer">
+      <mxGeometry x="20" y="40" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="event_handler" value="Event Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontColor=#333333;" vertex="1" parent="processor_layer">
+      <mxGeometry x="20" y="90" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="command_handler" value="Command Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontColor=#333333;" vertex="1" parent="processor_layer">
+      <mxGeometry x="20" y="140" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="ota_handler" value="OTA Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontColor=#333333;" vertex="1" parent="processor_layer">
+      <mxGeometry x="20" y="190" width="120" height="40" as="geometry"/>
+    </mxCell>
+
+    <!-- 存储层 -->
+    <mxCell id="storage_layer" value="存储层" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0277BD;startSize=30;fontStyle=1;fontColor=#0277BD;" vertex="1" parent="1">
+      <mxGeometry x="1020" y="80" width="140" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="redis_cache" value="Redis&#xa;(设备影子)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#0277BD;fontColor=#333333;" vertex="1" parent="storage_layer">
+      <mxGeometry x="20" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="mysql_db" value="MySQL&#xa;(设备数据)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#0277BD;fontColor=#333333;" vertex="1" parent="storage_layer">
+      <mxGeometry x="20" y="110" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="influxdb" value="InfluxDB&#xa;(时序数据)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#0277BD;fontColor=#333333;" vertex="1" parent="storage_layer">
+      <mxGeometry x="20" y="180" width="100" height="50" as="geometry"/>
+    </mxCell>
+
+    <!-- 连接线 -->
+    <mxCell id="edge1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="smart_bed" target="mqtt_adapter">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="smart_pillow" target="mqtt_adapter">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="sensor" target="coap_adapter">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="mqtt_adapter" target="message_router">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="coap_adapter" target="message_router">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="http_adapter" target="message_router">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="message_router" target="topic_property">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="topic_property" target="property_handler">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="topic_event" target="event_handler">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="property_handler" target="redis_cache">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="property_handler" target="influxdb">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#666666;strokeWidth=2;endArrow=classic;" edge="1" parent="1" source="event_handler" target="mysql_db">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- 协议说明 -->
+    <mxCell id="protocol_legend" value="通信协议说明" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="380" width="150" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="proto1" value="• MQTT: 设备长连接，推荐使用" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="40" y="420" width="250" height="20" as="geometry"/>
+    </mxCell>
+    <mxCell id="proto2" value="• CoAP: 低功耗设备，UDP连接" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="40" y="445" width="250" height="20" as="geometry"/>
+    </mxCell>
+    <mxCell id="proto3" value="• HTTP: 短连接，RESTful接口" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="40" y="470" width="250" height="20" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
