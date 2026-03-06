@@ -27,12 +27,51 @@
       </template>
       <el-row :gutter="20">
         <el-col :span="8">
-          <div class="product-image">
-            <img v-if="product.imageUrl" :src="product.imageUrl" />
-            <div v-else class="image-placeholder">
-              <el-icon><Picture /></el-icon>
-              <span>暂无图片</span>
-            </div>
+          <div class="product-image" :class="getCategoryClass(product.category)">
+            <!-- 智能床垫 - 更像真实的床垫 -->
+            <svg v-if="product.category === '智能床垫'" class="category-svg" viewBox="0 0 120 80" fill="none">
+              <!-- 床垫主体 - 厚实的床垫形状 -->
+              <rect x="8" y="28" width="104" height="40" rx="6" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="2.5"/>
+              <!-- 床垫表面纹理 -->
+              <path d="M20 34h80M20 44h80M20 54h80" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+              <!-- 床脚 -->
+              <path d="M15 68v6M105 68v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              <!-- 智能传感器指示灯 -->
+              <circle cx="95" cy="36" r="3" fill="currentColor" opacity="0.8"/>
+              <circle cx="95" cy="36" r="6" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+            </svg>
+            <!-- 电动床 - 可调节床头的电动床 -->
+            <svg v-else-if="product.category === '电动床'" class="category-svg" viewBox="0 0 120 80" fill="none">
+              <!-- 床架 -->
+              <rect x="6" y="48" width="108" height="20" rx="3" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="2"/>
+              <!-- 可调节床头 - 倾斜角度 -->
+              <path d="M8 48 L8 20 Q8 12 16 12 L30 12 Q38 12 38 20 L38 48" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="2"/>
+              <!-- 电机/调节按钮 -->
+              <circle cx="95" cy="58" r="5" fill="currentColor" opacity="0.3"/>
+              <circle cx="95" cy="58" r="2" fill="currentColor" opacity="0.8"/>
+              <!-- 床脚 -->
+              <path d="M12 68v6M108 68v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <!-- 智能枕头 - 清晰的枕头形状 -->
+            <svg v-else-if="product.category === '智能枕头'" class="category-svg" viewBox="0 0 120 80" fill="none">
+              <!-- 枕头主体 - 椭圆形 -->
+              <ellipse cx="60" cy="48" rx="52" ry="24" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="2.5"/>
+              <!-- 枕头表面纹理 -->
+              <ellipse cx="60" cy="48" rx="45" ry="18" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+              <!-- 智能传感器区域 -->
+              <circle cx="60" cy="42" r="8" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="60" cy="42" r="3" fill="currentColor" opacity="0.8"/>
+              <!-- 舒适层线条 -->
+              <path d="M20 55 Q60 65 100 55" stroke="currentColor" stroke-width="1.5" opacity="0.5" fill="none"/>
+            </svg>
+            <!-- 默认图标 -->
+            <svg v-else class="category-svg" viewBox="0 0 120 80" fill="none">
+              <rect x="20" y="12" width="80" height="56" rx="6" stroke="currentColor" stroke-width="2.5"/>
+              <path d="M40 28h40M40 40h40M40 52h25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <!-- 装饰点 -->
+              <circle cx="80" cy="52" r="3" fill="currentColor" opacity="0.5"/>
+            </svg>
+            <div class="category-label">{{ product.category || '产品' }}</div>
           </div>
         </el-col>
         <el-col :span="16">
@@ -287,11 +326,14 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Picture, Plus, Delete, Lock, Download, Upload } from '@element-plus/icons-vue'
+import { productApi } from '../../api/product'
+import { thingModelApi } from '../../api/thingModel'
 
 const router = useRouter()
 const route = useRoute()
 
 const product = ref({})
+const thingModelId = ref(null)
 const thingModelPoints = ref([])
 const activeTab = ref('properties')
 const showPointDialog = ref(false)
@@ -335,6 +377,15 @@ const getStatusType = (status) => {
 const getStatusText = (status) => {
   const map = { DEVELOPING: '开发中', PUBLISHED: '已发布', OFFLINE: '已下线' }
   return map[status] || status
+}
+
+const getCategoryClass = (category) => {
+  const map = {
+    '智能床垫': 'category-bed',
+    '电动床': 'category-sofa',
+    '智能枕头': 'category-pillow'
+  }
+  return map[category] || 'category-default'
 }
 
 const getEnumCount = (json) => {
@@ -403,8 +454,22 @@ const handleEditPoint = (row) => {
 
 const handleDeletePoint = async (row) => {
   await ElMessageBox.confirm('确定删除此功能点?', '提示', { type: 'warning' })
-  thingModelPoints.value = (thingModelPoints.value || []).filter(p => p.id !== row.id)
-  ElMessage.success('删除成功')
+
+  try {
+    // 调用API删除功能点
+    if (row.id && typeof row.id === 'number' && row.id > 1000000000) {
+      // 如果是临时ID（前端生成的），不需要调用API
+      thingModelPoints.value = (thingModelPoints.value || []).filter(p => p.id !== row.id)
+    } else if (row.id) {
+      // 调用后端API删除
+      await thingModelApi.deletePoint(row.id)
+      thingModelPoints.value = (thingModelPoints.value || []).filter(p => p.id !== row.id)
+    }
+    ElMessage.success('删除成功')
+  } catch (e) {
+    console.error('删除功能点失败:', e)
+    ElMessage.error('删除失败')
+  }
 }
 
 const handleDataTypeChange = () => {
@@ -443,21 +508,45 @@ const handleSavePoint = async () => {
     saveData.enumValuesJson = JSON.stringify(enumValues.value)
   }
 
-  if (isEditPoint.value) {
-    const idx = thingModelPoints.value.findIndex(p => p.id === pointForm.id)
-    if (idx !== -1) {
-      thingModelPoints.value[idx] = { ...thingModelPoints.value[idx], ...saveData }
+  try {
+    // 如果没有thingModelId，先创建物模型
+    if (!thingModelId.value) {
+      const tmRes = await thingModelApi.createThingModel({
+        name: product.value.name + '物模型',
+        code: 'TM_' + product.value.pid,
+        category: product.value.category,
+        status: 'DRAFT'
+      })
+      if (tmRes && tmRes.code === 200 && tmRes.data) {
+        thingModelId.value = tmRes.data.id
+        // 更新产品的thingModelId
+        await productApi.update(product.value.id, { thingModelId: thingModelId.value })
+      }
     }
-  } else {
-    thingModelPoints.value.push({
-      ...saveData,
-      id: Date.now()
-    })
-  }
 
-  showPointDialog.value = false
-  ElMessage.success(isEditPoint.value ? '更新成功' : '添加成功')
-  resetPointForm()
+    saveData.thingModelId = thingModelId.value
+
+    if (isEditPoint.value) {
+      // 更新功能点
+      await thingModelApi.updatePoint(pointForm.id, saveData)
+    } else {
+      // 创建功能点
+      const res = await thingModelApi.createPoint(saveData)
+      if (res && res.code === 200) {
+        saveData.id = res.data.id
+      }
+    }
+
+    // 重新加载功能点列表
+    await loadThingModelPoints()
+
+    showPointDialog.value = false
+    ElMessage.success(isEditPoint.value ? '更新成功' : '添加成功')
+    resetPointForm()
+  } catch (e) {
+    console.error('保存功能点失败:', e)
+    ElMessage.error('保存失败: ' + (e.message || '未知错误'))
+  }
 }
 
 const resetPointForm = () => {
@@ -500,36 +589,52 @@ const handlePublishThingModel = async () => {
   ElMessage.success('发布成功')
 }
 
-// 模拟加载产品数据
-onMounted(() => {
-  const id = route.params.id || 1
-  product.value = {
-    id,
-    name: '慕思智能床垫X1',
-    model: 'DR-M001',
-    brand: '慕思',
-    pid: 'PID_A1B2C3',
-    category: '智能床垫',
-    protocol: 'MQTT',
-    status: 'DEVELOPING',
-    createTime: '2026-03-01 10:00:00',
-    imageUrl: ''
-  }
+// 加载产品数据
+onMounted(async () => {
+  const id = route.params.id
+  console.log('产品详情页, ID:', id)
 
-  // 模拟已有物模型数据
-  thingModelPoints.value = [
-    { id: 1, pointId: 'bed_position', name: '睡床位置', pointType: 'PROPERTY', dataType: 'int', access: 'readWrite', unit: '%', rangeJson: '{"min":0,"max":100}', defaultValue: '0', description: '当前床头抬起位置' },
-    { id: 2, pointId: 'temperature', name: '床垫温度', pointType: 'PROPERTY', dataType: 'int', access: 'readOnly', unit: '℃', rangeJson: '{"min":15,"max":40}', description: '当前床垫表面温度' },
-    { id: 3, pointId: 'sleep_mode', name: '睡眠模式', pointType: 'PROPERTY', dataType: 'enum', access: 'readWrite', enumValuesJson: '[{"value":"off","description":"关闭"},{"value":"deep","description":"深睡"},{"value":"light","description":"浅睡"}]', defaultValue: 'off', description: '当前睡眠模式' },
-    { id: 4, pointId: 'heating_status', name: '加热状态', pointType: 'PROPERTY', dataType: 'bool', access: 'readWrite', defaultValue: 'false', description: '加热功能开关' }
-  ]
+  try {
+    const res = await productApi.getById(id)
+    console.log('获取产品数据:', res)
+    if (res && res.code === 200 && res.data) {
+      product.value = res.data
+      thingModelId.value = res.data.thingModelId
+
+      // 如果有物模型ID，加载功能点
+      if (thingModelId.value) {
+        await loadThingModelPoints()
+      }
+    } else {
+      ElMessage.error('获取产品详情失败')
+    }
+  } catch (e) {
+    console.error('获取产品详情失败:', e)
+    ElMessage.error('获取产品详情失败')
+  }
 })
+
+// 加载物模型功能点
+const loadThingModelPoints = async () => {
+  if (!thingModelId.value) return
+
+  try {
+    const res = await thingModelApi.getPoints(thingModelId.value)
+    console.log('获取物模型功能点:', res)
+    if (res && res.code === 200 && res.data) {
+      thingModelPoints.value = res.data
+    }
+  } catch (e) {
+    console.error('获取物模型功能点失败:', e)
+  }
+}
 </script>
 
 <style scoped>
 .product-detail {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 24px;
 }
 
 .page-header {
@@ -568,15 +673,62 @@ onMounted(() => {
 .product-image {
   width: 240px;
   height: 160px;
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
-  background: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-image:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* 品类渐变背景 */
+.product-image.category-bed {
+  background: linear-gradient(135deg, #E0F2FE 0%, #7DD3FC 50%, #38BDF8 100%);
+  color: #0369A1;
+}
+
+.product-image.category-sofa {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #FBBF24 100%);
+  color: #B45309;
+}
+
+.product-image.category-pillow {
+  background: linear-gradient(135deg, #DCFCE7 0%, #86EFAC 50%, #4ADE80 100%);
+  color: #15803D;
+}
+
+.product-image.category-default {
+  background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 50%, #9CA3AF 100%);
+  color: #4B5563;
+}
+
+/* SVG图标 */
+.category-svg {
+  width: 100px;
+  height: 66px;
+  opacity: 0.9;
+}
+
+.category-label {
+  position: absolute;
+  bottom: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: currentColor;
+  opacity: 0.8;
 }
 
 .image-placeholder {

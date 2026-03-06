@@ -139,7 +139,7 @@ public class ThingModelService {
                 List<Map<String, Object>> events = objectMapper.readValue(
                     template.getEventsJson(),
                     new TypeReference<List<Map<String, Object>>>() {});
-                for (Map<String, Object>> event : events) {
+                for (Map<String, Object> event : events) {
                     ThingModelPoint point = createPointFromMap(thingModelId, "EVENT", event);
                     pointService.create(point);
                 }

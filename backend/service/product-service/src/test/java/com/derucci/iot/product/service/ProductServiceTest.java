@@ -48,7 +48,7 @@ class ProductServiceTest {
         testProduct.setBrand("慕思");
         testProduct.setCategory("智能床垫");
         testProduct.setProtocol("MQTT");
-        testProduct.setStatus(ProductStatus.DRAFT);
+        testProduct.setStatus(ProductStatus.DEVELOPING);
     }
 
     @Test
@@ -172,7 +172,7 @@ class ProductServiceTest {
         when(productRepository.findAll()).thenReturn(products);
         
         // When: 按分类查询
-        List<Product> result = productService.list("智能床垫", null, null);
+        List<Product> result = productService.list("智能床垫", null, null, null);
         
         // Then: 
         assertEquals(2, result.size());
@@ -191,7 +191,7 @@ class ProductServiceTest {
         when(productRepository.findAll()).thenReturn(products);
         
         // When: 按通信方式查询
-        List<Product> result = productService.list(null, "MQTT", null);
+        List<Product> result = productService.list(null, "MQTT", null, null);
         
         // Then:
         assertEquals(2, result.size());
@@ -210,7 +210,7 @@ class ProductServiceTest {
         when(productRepository.findAll()).thenReturn(products);
         
         // When: 按关键字搜索
-        List<Product> result = productService.list(null, null, "床垫");
+        List<Product> result = productService.list(null, null, null, "床垫");
         
         // Then:
         assertEquals(1, result.size());

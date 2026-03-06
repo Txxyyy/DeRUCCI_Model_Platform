@@ -1,10 +1,5 @@
 <template>
   <div class="product-list">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h2>产品列表</h2>
-    </div>
-
     <!-- Tab分类筛选 -->
     <div class="category-tabs">
       <el-tabs v-model="activeCategory" @tab-change="handleCategoryChange">
@@ -15,120 +10,89 @@
       </el-tabs>
     </div>
 
-    <!-- 筛选区域 -->
-    <el-card class="filter-card">
-      <el-row :gutter="20" align="middle">
-        <el-col :span="4">
-          <el-select v-model="filters.protocol" placeholder="通信方式" clearable style="width: 100%">
-            <el-option label="全部" value="" />
-            <el-option label="MQTT" value="MQTT" />
-            <el-option label="BLE" value="BLE" />
-          </el-select>
-        </el-col>
-        <el-col :span="4">
-          <el-select v-model="filters.status" placeholder="状态" clearable style="width: 100%">
-            <el-option label="全部" value="" />
-            <el-option label="开发中" value="DEVELOPING" />
-            <el-option label="已发布" value="PUBLISHED" />
-          </el-select>
-        </el-col>
-        <el-col :span="8">
-          <el-input
-            v-model="filters.keyword"
-            placeholder="搜索名称/型号..."
-            clearable
-            @keyup.enter="handleSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-col>
-        <el-col :span="4">
-          <el-button @click="handleReset">重置</el-button>
-        </el-col>
-      </el-row>
-    </el-card>
+    <!-- 搜索栏 - 灰色背景 -->
+    <div class="search-bar">
+      <div class="search-left">
+        <el-input
+          v-model="filters.keyword"
+          placeholder="搜索产品名称/型号..."
+          clearable
+          class="search-input"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select v-model="filters.protocol" placeholder="通信方式" clearable class="filter-select">
+          <el-option label="全部" value="" />
+          <el-option label="MQTT" value="MQTT" />
+          <el-option label="BLE" value="BLE" />
+        </el-select>
+        <el-select v-model="filters.status" placeholder="状态" clearable class="filter-select">
+          <el-option label="全部" value="" />
+          <el-option label="开发中" value="DEVELOPING" />
+          <el-option label="已发布" value="PUBLISHED" />
+        </el-select>
+        <el-button @click="handleReset">重置</el-button>
+      </div>
+      <div class="search-right">
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          添加产品
+        </el-button>
+      </div>
+    </div>
 
-    <!-- 产品列表 - 4列布局 -->
+    <!-- 产品列表 - 卡片布局 -->
     <div class="product-cards">
-      <el-row :gutter="20">
-        <!-- 添加产品卡片 - 固定在第一个 -->
-        <el-col :xs="24" :sm="12" :md="6" :lg="6">
-          <el-card class="product-card add-card" shadow="hover" @click="handleAdd">
-            <div class="add-card-content">
-              <div class="device-icon-wrapper">
-                <svg class="device-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
-                  <path d="M32 20v24M20 32h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <span class="add-text">添加产品</span>
-            </div>
-          </el-card>
-        </el-col>
-
+      <el-row :gutter="16">
         <!-- 产品卡片 -->
         <el-col
           v-for="item in filteredProducts"
           :key="item.id"
           :xs="24"
           :sm="12"
-          :md="6"
+          :md="8"
           :lg="6"
         >
           <el-card class="product-card" shadow="hover" @click="handleViewDetail(item)">
-            <!-- 顶部图标区域 -->
-            <div class="card-header">
-              <div class="device-icon-wrapper">
-                <!-- 智能床垫图标 -->
-                <svg v-if="item.category === '智能床垫'" class="device-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="8" y="24" width="48" height="24" rx="4" stroke="currentColor" stroke-width="2"/>
-                  <path d="M16 24V16a2 2 0 012-2h0a2 2 0 012 2v8M24 24V16a2 2 0 012-2h0a2 2 0 012 2v8M32 24V16a2 2 0 012-2h0a2 2 0 012 2v8M40 24V16a2 2 0 012-2h0a2 2 0 012 2v8M20 40h24M20 44h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <!-- 电动床图标 -->
-                <svg v-else-if="item.category === '电动床'" class="device-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="6" y="28" width="52" height="20" rx="2" stroke="currentColor" stroke-width="2"/>
-                  <path d="M14 28V20a2 2 0 012-2h0a2 2 0 012 2v8M26 28V20a2 2 0 012-2h0a2 2 0 012 2v8M38 28V20a2 2 0 012-2h0a2 2 0 012 2v8M50 28V20a2 2 0 012-2h0a2 2 0 012 2v8" stroke="currentColor" stroke-width="2"/>
-                  <path d="M14 48l4-6h28l4 6M18 48h28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <!-- 智能枕头图标 -->
-                <svg v-else-if="item.category === '智能枕头'" class="device-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <ellipse cx="32" cy="36" rx="24" ry="14" stroke="currentColor" stroke-width="2"/>
-                  <path d="M20 32c-2 0-4-2-4-4s2-4 4-4M44 32c2 0 4-2 4-4s-2-4-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <circle cx="32" cy="28" r="4" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                <!-- 默认图标 -->
-                <svg v-else class="device-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" stroke-width="2"/>
-                  <path d="M24 20h16M24 28h16M24 36h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div class="status-tags">
-                <el-tag :type="item.protocol === 'MQTT' ? 'primary' : 'warning'" size="small" effect="light">
-                  {{ item.protocol || 'MQTT' }}
-                </el-tag>
-                <el-tag :type="getStatusType(item.status)" size="small" effect="light">
-                  {{ getStatusText(item.status) }}
-                </el-tag>
-              </div>
-            </div>
-
-            <!-- 产品信息 -->
             <div class="card-body">
-              <h3 class="product-name">{{ item.name }}</h3>
-              <div class="product-meta">
-                <div class="meta-item">
-                  <span class="meta-label">PID</span>
-                  <span class="meta-value">{{ item.pid || '-' }}</span>
+              <!-- 顶部：产品名称 + 状态标签 -->
+              <div class="card-header">
+                <h3 class="product-name">{{ item.name }}</h3>
+                <div class="product-tags">
+                  <el-tag :type="getStatusType(item.status)" size="small" effect="light">
+                    {{ getStatusText(item.status) }}
+                  </el-tag>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">型号</span>
-                  <span class="meta-value">{{ item.model || '-' }}</span>
+              </div>
+
+              <!-- 详细信息列表 -->
+              <div class="product-detail">
+                <div class="detail-row">
+                  <span class="detail-label">PID</span>
+                  <span class="detail-value">{{ item.pid || '-' }}</span>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">创建</span>
-                  <span class="meta-value">{{ formatDate(item.createTime) }}</span>
+                <div class="detail-row">
+                  <span class="detail-label">产品类型</span>
+                  <span class="detail-value">{{ item.category || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">产品型号</span>
+                  <span class="detail-value">{{ item.model || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">创建时间</span>
+                  <span class="detail-value">{{ formatDate(item.createTime) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">通信协议</span>
+                  <span class="detail-value">
+                    <el-tag :type="item.protocol === 'MQTT' ? 'primary' : 'warning'" size="small" effect="plain">
+                      {{ item.protocol || 'MQTT' }}
+                    </el-tag>
+                  </span>
                 </div>
               </div>
             </div>
@@ -137,7 +101,7 @@
       </el-row>
 
       <!-- 空状态 -->
-      <el-empty v-if="filteredProducts.length === 0 && !activeCategory && !filters.protocol && !filters.status && !filters.keyword" description="暂无产品，点击添加产品卡片创建" />
+      <el-empty v-if="filteredProducts.length === 0 && !activeCategory && !filters.protocol && !filters.status && !filters.keyword" description="暂无产品" />
 
       <!-- 分页 -->
       <div class="pagination-wrapper" v-if="filteredProducts.length > 0">
@@ -266,7 +230,15 @@ const rules = {
   protocol: [{ required: true, message: '请选择通信方式', trigger: 'change' }]
 }
 
-// 格式化日期
+// 获取品类对应的CSS类
+const getCategoryClass = (category) => {
+  const map = {
+    '智能床垫': 'category-bed',
+    '电动床': 'category-sofa',
+    '智能枕头': 'category-pillow'
+  }
+  return map[category] || 'category-default'
+}
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
@@ -319,6 +291,7 @@ const getStatusText = (status) => {
 }
 
 const fetchData = async () => {
+  console.log('开始获取产品列表...')
   try {
     const res = await productApi.getList({
       category: activeCategory.value || undefined,
@@ -326,19 +299,18 @@ const fetchData = async () => {
       status: filters.status || undefined,
       keyword: filters.keyword || undefined
     })
-    products.value = res.data || []
+    console.log('API返回数据:', res)
+    if (res && res.code === 200) {
+      products.value = res.data || []
+      console.log('设置产品列表:', products.value.length)
+    } else {
+      console.error('API返回错误:', res)
+      products.value = []
+    }
   } catch (e) {
-    // 模拟数据
-    products.value = [
-      { id: 1, name: '慕思智能床垫X1', model: 'DR-M001', brand: '慕思', pid: 'A1B2C3', category: '智能床垫', protocol: 'MQTT', status: 'PUBLISHED', imageUrl: '', createTime: '2026-03-01' },
-      { id: 2, name: '慕思智能枕头P1', model: 'DR-P001', brand: '慕思', pid: 'D4E5F6', category: '智能枕头', protocol: 'BLE', status: 'DEVELOPING', imageUrl: '', createTime: '2026-03-02' },
-      { id: 3, name: '慕思电动床B1', model: 'DR-B001', brand: '慕思', pid: 'G7H8I9', category: '电动床', protocol: 'MQTT', status: 'PUBLISHED', imageUrl: '', createTime: '2026-03-03' },
-      { id: 4, name: '慕思智能床垫Pro', model: 'DR-M002', brand: '慕思', pid: 'J0K1L2', category: '智能床垫', protocol: 'MQTT', status: 'DEVELOPING', imageUrl: '', createTime: '2026-03-04' },
-      { id: 5, name: '慕思智能枕头Pro', model: 'DR-P002', brand: '慕思', pid: 'M3N4O5', category: '智能枕头', protocol: 'BLE', status: 'DEVELOPING', imageUrl: '', createTime: '2026-03-05' },
-      { id: 6, name: '慕思电动床Pro', model: 'DR-B002', brand: '慕思', pid: 'P6Q7R8', category: '电动床', protocol: 'MQTT', status: 'PUBLISHED', imageUrl: '', createTime: '2026-03-05' },
-      { id: 7, name: '慕思智能床垫Max', model: 'DR-M003', brand: '慕思', pid: 'S9T0U1', category: '智能床垫', protocol: 'MQTT', status: 'DEVELOPING', imageUrl: '', createTime: '2026-03-05' },
-      { id: 8, name: '慕思智能枕头Max', model: 'DR-P003', brand: '慕思', pid: 'V2W3X4', category: '智能枕头', protocol: 'BLE', status: 'PUBLISHED', imageUrl: '', createTime: '2026-03-05' }
-    ]
+    console.error('获取产品列表失败:', e)
+    // 清空产品列表，不使用mock数据
+    products.value = []
   }
 }
 
@@ -388,19 +360,20 @@ const handleSubmit = async () => {
   if (!valid) return
 
   submitLoading.value = true
+  console.log('提交表单数据:', form)
   try {
-    await productApi.create(form)
-    ElMessage.success('创建成功')
-    dialogVisible.value = false
-    fetchData()
+    const res = await productApi.create(form)
+    console.log('创建产品返回:', res)
+    if (res && res.code === 200) {
+      ElMessage.success('创建成功')
+      dialogVisible.value = false
+      fetchData()
+    } else {
+      ElMessage.error('创建失败: ' + (res?.message || '未知错误'))
+    }
   } catch (e) {
-    // 模拟成功
-    form.id = Date.now()
-    form.status = 'DEVELOPING'
-    form.createTime = new Date().toISOString().split('T')[0]
-    products.value.unshift({ ...form })
-    ElMessage.success('创建成功')
-    dialogVisible.value = false
+    console.error('创建产品失败:', e)
+    ElMessage.error('创建失败: ' + (e.message || '未知错误'))
   } finally {
     submitLoading.value = false
   }
@@ -412,19 +385,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+/* 页面容器 */
+.product-list {
+  padding: 24px;
+  background: var(--el-bg-color);
+  min-height: calc(100vh - 60px);
 }
 
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  color: var(--color-title);
-}
-
+/* Tab分类 */
 .category-tabs {
   margin-bottom: 16px;
 }
@@ -433,147 +401,194 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
-.filter-card {
+.category-tabs :deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+}
+
+.category-tabs :deep(.el-tabs__item) {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 0 20px;
+}
+
+.category-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+/* 搜索栏 - 灰色背景 */
+.search-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
   margin-bottom: 20px;
 }
 
+.search-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-input {
+  width: 280px;
+}
+
+.filter-select {
+  width: 140px;
+}
+
+.search-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 产品卡片列表 */
 .product-cards {
   min-height: 400px;
 }
 
-/* 卡片通用样式 */
+/* 卡片样式 */
 .product-card {
-  height: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-lighter);
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--el-color-primary-light-5);
 }
 
 .product-card :deep(.el-card__body) {
-  padding: 16px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 添加产品卡片 */
-.add-card :deep(.el-card__body) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-card-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 20px 0;
-}
-
-.add-text {
-  font-size: 14px;
-  color: var(--color-disabled);
-  transition: color 0.25s ease;
-}
-
-.add-card:hover .add-text {
-  color: var(--el-color-primary);
-}
-
-/* 卡片头部 - 图标和标签 */
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.device-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.device-icon {
-  width: 40px;
-  height: 40px;
-  color: var(--el-color-primary);
-  opacity: 0.85;
-}
-
-.status-tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  padding: 20px;
 }
 
 /* 卡片主体 */
 .card-body {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+/* 顶部：产品名称 + 状态标签 */
+.card-header {
+  display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .product-name {
-  margin: 0 0 12px;
-  font-size: 15px;
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--color-title);
+  color: var(--el-text-color-primary);
+  line-height: 1.5;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: 0.3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-/* 元信息区域 */
-.product-meta {
+.product-tags {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 详细信息列表 */
+.product-detail {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.meta-item {
+.detail-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
-.meta-label {
+.detail-label {
+  color: var(--el-text-color-secondary);
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: var(--el-text-color-regular);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
   font-size: 12px;
-  color: var(--color-disabled);
-  font-weight: 400;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
 }
 
-.meta-value {
-  font-size: 12px;
-  color: var(--color-secondary);
-  font-weight: 500;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* 移除了产品图片区域的背景样式 */
-.product-image {
-  display: none;
-}
-
+/* 空状态 */
 .form-tip {
   font-size: 12px;
   color: var(--color-disabled);
   margin-top: 4px;
 }
 
+/* 分页 */
 .pagination-wrapper {
   display: flex;
   justify-content: center;
   margin-top: 24px;
+  padding: 20px 0;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .product-list {
+    padding: 16px;
+  }
+
+  .search-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .search-left {
+    flex-wrap: wrap;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .filter-select {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .card-content {
+    padding: 16px;
+  }
+
+  .card-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .card-icon svg {
+    width: 28px;
+    height: 28px;
+  }
 }
 </style>

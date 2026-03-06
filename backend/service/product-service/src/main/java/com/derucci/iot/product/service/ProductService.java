@@ -40,7 +40,8 @@ public class ProductService {
     }
 
     public Optional<Product> findByCode(String code) {
-        return productRepository.findByCode(code);
+        // 兼容旧接口：通过code查询实际使用pid
+        return productRepository.findByPid(code);
     }
 
     public List<Product> findAll() {
