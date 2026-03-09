@@ -50,6 +50,21 @@ public class ThingModelPointService {
      */
     @Transactional
     public ThingModelPoint create(ThingModelPoint point) {
+        // 验证物模型ID
+        if (point.getThingModelId() == null) {
+            throw new IllegalArgumentException("物模型ID不能为空");
+        }
+
+        // 验证功能点标识符
+        if (point.getPointId() == null || point.getPointId().isEmpty()) {
+            throw new IllegalArgumentException("功能点标识符不能为空");
+        }
+
+        // 验证功能名称
+        if (point.getName() == null || point.getName().isEmpty()) {
+            throw new IllegalArgumentException("功能名称不能为空");
+        }
+
         // 验证功能点类型
         validatePointType(point);
         
