@@ -517,11 +517,28 @@ const handleSavePoint = async () => {
         category: product.value.category,
         status: 'DRAFT'
       })
-      if (tmRes && tmRes.code === 200 && tmRes.data) {
-        thingModelId.value = tmRes.data.id
-        // 更新产品的thingModelId
-        await productApi.update(product.value.id, { thingModelId: thingModelId.value })
+      // 检查物模型创建是否成功
+      if (!tmRes || tmRes.code !== 200 || !tmRes.data) {
+        ElMessage.error('创建物模型失败: ' + (tmRes?.message || '未知错误'))
+        return
       }
+      if (!tmRes.data.id) {
+        ElMessage.error('物模型创建失败：未返回有效ID')
+        return
+      }
+      thingModelId.value = tmRes.data.id
+      // 更新产品的thingModelId
+      const updateRes = await productApi.update(product.value.id, { thingModelId: thingModelId.value })
+      if (!updateRes || updateRes.code !== 200) {
+        ElMessage.error('更新产品关联物模型失败')
+        return
+      }
+    }
+
+    // 再次检查thingModelId
+    if (!thingModelId.value) {
+      ElMessage.error('物模型ID无效，无法保存功能点')
+      return
     }
 
     saveData.thingModelId = thingModelId.value
