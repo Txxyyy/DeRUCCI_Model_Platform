@@ -7,16 +7,28 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8082',
-        changeOrigin: true
+        target: 'http://127.0.0.1:8082',
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          req.headers.host = 'localhost:8082'
+        }
       },
       '/thing-models': {
-        target: 'http://localhost:8083/api',
-        changeOrigin: true
+        target: 'http://127.0.0.1:8083/api',
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          req.headers.host = 'localhost:8083'
+        }
       },
       '/thing-model': {
-        target: 'http://localhost:8083/api',
-        changeOrigin: true
+        target: 'http://127.0.0.1:8083/api',
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          req.headers.host = 'localhost:8083'
+        }
       }
     }
   }
