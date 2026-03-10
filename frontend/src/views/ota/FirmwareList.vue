@@ -17,7 +17,7 @@
         </el-col>
         <el-col :span="8">
           <el-input v-model="filters.keyword" placeholder="搜索版本号..." clearable @clear="loadFirmwares">
-            <template #prefix><el-icon><Search /></el-icon></template>
+            <template #prefix><AppIcon name="search" :size="15" /></template>
           </el-input>
         </el-col>
         <el-col :span="4">
@@ -106,7 +106,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, UploadFilled } from '@element-plus/icons-vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { otaApi } from '@/api/ota'
 import { productApi } from '@/api/product'
 

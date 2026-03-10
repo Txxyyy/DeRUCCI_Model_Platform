@@ -7,50 +7,57 @@
         <p class="page-desc">维护各品类的标准功能点模板，产品开发时可直接导入使用</p>
       </div>
       <el-button type="primary" @click="handleCreate">
-        <el-icon><Plus /></el-icon>
+        <AppIcon name="plus" :size="15" style="margin-right:4px" />
         新建模板
       </el-button>
     </div>
 
     <!-- 品类选择 -->
-    <el-card class="category-card">
-      <el-row :gutter="20">
-        <el-col
-          v-for="category in categories"
-          :key="category.value"
-          :xs="24"
-          :sm="8"
-          :md="6"
-        >
-          <div 
-            class="category-item" 
-            :class="{ active: selectedCategory === category.value }"
-            @click="handleSelectCategory(category.value)"
-          >
-            <div class="category-icon">{{ category.icon }}</div>
-            <div class="category-name">{{ category.label }}</div>
-            <div class="category-count">模板: {{ getTemplateCount(category.value) }}个</div>
-          </div>
-        </el-col>
-      </el-row>
-    </el-card>
+    <div class="category-selector">
+      <div
+        v-for="category in categories"
+        :key="category.value"
+        class="category-item"
+        :class="{ active: selectedCategory === category.value }"
+        @click="handleSelectCategory(category.value)"
+      >
+        <CategoryIcon
+          :category="category.value"
+          :size="64"
+          :style="{ color: selectedCategory === category.value ? '#1E4DA3' : '#94A3B8' }"
+        />
+        <div class="category-name" :class="{ 'active-text': selectedCategory === category.value }">
+          {{ category.label }}
+        </div>
+        <div class="category-badge" :class="{ 'active-badge': selectedCategory === category.value }">
+          <span>{{ getTemplateCount(category.value) }} 个模板</span>
+        </div>
+      </div>
+    </div>
 
     <!-- 模板列表 -->
     <el-card class="template-list-card">
       <template #header>
-        <span>{{ currentCategoryName }} - 模板列表</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <CategoryIcon :category="selectedCategory" :size="20" :style="{ color: '#1E4DA3' }" />
+          <span>{{ currentCategoryName }} - 模板列表</span>
+        </div>
       </template>
 
       <el-table :data="filteredTemplates" stripe>
         <el-table-column prop="name" label="模板名称" min-width="150" />
         <el-table-column prop="code" label="模板编码" min-width="150" />
         <el-table-column prop="description" label="描述" min-width="200" />
-        <el-table-column label="功能点数" width="120">
+        <el-table-column label="功能点数" width="200">
           <template #default="{ row }">
-            属性{{ row.propertyCount || 0 }} / 事件{{ row.eventCount || 0 }} / 命令{{ row.commandCount || 0 }}
+            <el-tag type="primary" size="small" style="margin-right:4px">属性 {{ row.propertyCount || 0 }}</el-tag>
+            <el-tag type="warning" size="small" style="margin-right:4px">事件 {{ row.eventCount || 0 }}</el-tag>
+            <el-tag type="success" size="small">命令 {{ row.commandCount || 0 }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="创建时间" width="180">
+          <template #default="{ row }">{{ formatDate(row.createTime) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
@@ -235,14 +242,15 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import AppIcon from '@/components/AppIcon.vue'
+import CategoryIcon from '@/components/CategoryIcon.vue'
 import { thingModelApi } from '@/api/thingModel'
 
 // 品类列表
 const categories = [
-  { label: '智能床垫', value: '智能床垫', icon: '🛏️' },
-  { label: '电动床', value: '电动床', icon: '🛏️' },
-  { label: '智能枕头', value: '智能枕头', icon: '💤' }
+  { label: '智能床垫', value: '智能床垫' },
+  { label: '电动床', value: '电动床' },
+  { label: '智能枕头', value: '智能枕头' }
 ]
 
 const selectedCategory = ref('智能床垫')
@@ -278,6 +286,11 @@ const filteredTemplates = computed(() => {
 const getCategoryName = (value) => {
   const c = categories.find(c => c.value === value)
   return c ? c.label : value
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  return String(dateStr).replace('T', ' ').substring(0, 16)
 }
 
 const getTemplateCount = (category) => {
@@ -440,42 +453,59 @@ onMounted(() => {
   color: #909399;
 }
 
-.category-card {
+.category-selector {
+  display: flex;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
 .category-item {
-  padding: 20px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 20px;
+  background: #fff;
+  border: 2px solid #E8EDF3;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .category-item:hover {
-  border-color: var(--color-primary);
+  border-color: #B8CBE4;
+  box-shadow: 0 4px 12px rgba(30, 77, 163, 0.08);
 }
 
 .category-item.active {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-}
-
-.category-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
+  border-color: #1E4DA3;
+  background: rgba(30, 77, 163, 0.04);
+  box-shadow: 0 0 0 3px rgba(30, 77, 163, 0.08);
 }
 
 .category-name {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1A2B4B;
+  margin: 0;
 }
 
-.category-count {
+.category-name.active-text {
+  color: #1E4DA3;
+}
+
+.category-badge {
+  background: #F1F5F9;
+  color: #64748B;
+  border-radius: 20px;
+  padding: 2px 10px;
   font-size: 12px;
-  color: var(--color-secondary);
+}
+
+.category-badge.active-badge {
+  background: rgba(30, 77, 163, 0.08);
+  color: #1E4DA3;
 }
 
 .template-list-card {

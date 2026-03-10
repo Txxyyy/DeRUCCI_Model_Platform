@@ -2,7 +2,7 @@
   <div class="login-container">
     <el-card class="login-card">
       <template #header>
-        <h2>慕思IoT设备管理平台</h2>
+        <h2>慕思产品管理平台</h2>
       </template>
       <el-form :model="form" :rules="rules" ref="formRef">
         <el-form-item prop="username">

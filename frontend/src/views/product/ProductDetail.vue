@@ -4,7 +4,7 @@
     <div class="page-header">
       <div class="header-left">
         <el-button text @click="handleBack">
-          <el-icon><ArrowLeft /></el-icon>
+          <AppIcon name="arrow-left" :size="16" style="margin-right:4px" />
           返回
         </el-button>
         <h2>{{ product.name || '产品详情' }}</h2>
@@ -15,7 +15,7 @@
         <el-button type="primary" @click="handlePublish" v-if="product.status === 'DEVELOPING'">发布</el-button>
         <el-button type="danger" @click="handleDelete" v-if="product.status === 'DEVELOPING'">删除</el-button>
         <el-tag type="success" v-if="product.status === 'PUBLISHED'">
-          <el-icon><Lock /></el-icon> 已发布锁定
+          <AppIcon name="lock" :size="12" style="vertical-align:middle;margin-right:3px" /> 已发布锁定
         </el-tag>
       </div>
     </div>
@@ -28,49 +28,7 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <div class="product-image" :class="getCategoryClass(product.category)">
-            <!-- 智能床垫 - 更像真实的床垫 -->
-            <svg v-if="product.category === '智能床垫'" class="category-svg" viewBox="0 0 120 80" fill="none">
-              <!-- 床垫主体 - 厚实的床垫形状 -->
-              <rect x="8" y="28" width="104" height="40" rx="6" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="2.5"/>
-              <!-- 床垫表面纹理 -->
-              <path d="M20 34h80M20 44h80M20 54h80" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
-              <!-- 床脚 -->
-              <path d="M15 68v6M105 68v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-              <!-- 智能传感器指示灯 -->
-              <circle cx="95" cy="36" r="3" fill="currentColor" opacity="0.8"/>
-              <circle cx="95" cy="36" r="6" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-            </svg>
-            <!-- 电动床 - 可调节床头的电动床 -->
-            <svg v-else-if="product.category === '电动床'" class="category-svg" viewBox="0 0 120 80" fill="none">
-              <!-- 床架 -->
-              <rect x="6" y="48" width="108" height="20" rx="3" fill="currentColor" opacity="0.1" stroke="currentColor" stroke-width="2"/>
-              <!-- 可调节床头 - 倾斜角度 -->
-              <path d="M8 48 L8 20 Q8 12 16 12 L30 12 Q38 12 38 20 L38 48" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="2"/>
-              <!-- 电机/调节按钮 -->
-              <circle cx="95" cy="58" r="5" fill="currentColor" opacity="0.3"/>
-              <circle cx="95" cy="58" r="2" fill="currentColor" opacity="0.8"/>
-              <!-- 床脚 -->
-              <path d="M12 68v6M108 68v6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-            </svg>
-            <!-- 智能枕头 - 清晰的枕头形状 -->
-            <svg v-else-if="product.category === '智能枕头'" class="category-svg" viewBox="0 0 120 80" fill="none">
-              <!-- 枕头主体 - 椭圆形 -->
-              <ellipse cx="60" cy="48" rx="52" ry="24" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="2.5"/>
-              <!-- 枕头表面纹理 -->
-              <ellipse cx="60" cy="48" rx="45" ry="18" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-              <!-- 智能传感器区域 -->
-              <circle cx="60" cy="42" r="8" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.5"/>
-              <circle cx="60" cy="42" r="3" fill="currentColor" opacity="0.8"/>
-              <!-- 舒适层线条 -->
-              <path d="M20 55 Q60 65 100 55" stroke="currentColor" stroke-width="1.5" opacity="0.5" fill="none"/>
-            </svg>
-            <!-- 默认图标 -->
-            <svg v-else class="category-svg" viewBox="0 0 120 80" fill="none">
-              <rect x="20" y="12" width="80" height="56" rx="6" stroke="currentColor" stroke-width="2.5"/>
-              <path d="M40 28h40M40 40h40M40 52h25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <!-- 装饰点 -->
-              <circle cx="80" cy="52" r="3" fill="currentColor" opacity="0.5"/>
-            </svg>
+            <CategoryIcon :category="product.category" :size="100" />
             <div class="category-label">{{ product.category || '产品' }}</div>
           </div>
         </el-col>
@@ -78,26 +36,26 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="产品型号">
               {{ product.model }}
-              <el-icon v-if="product.status === 'PUBLISHED'" class="lock-icon"><Lock /></el-icon>
+              <AppIcon v-if="product.status === 'PUBLISHED'" name="lock" :size="12" class="lock-icon" />
             </el-descriptions-item>
             <el-descriptions-item label="产品名称">
               {{ product.name }}
-              <el-icon v-if="product.status === 'PUBLISHED'" class="lock-icon"><Lock /></el-icon>
+              <AppIcon v-if="product.status === 'PUBLISHED'" name="lock" :size="12" class="lock-icon" />
             </el-descriptions-item>
             <el-descriptions-item label="产品品牌">
               {{ product.brand }}
-              <el-icon v-if="product.status === 'PUBLISHED'" class="lock-icon"><Lock /></el-icon>
+              <AppIcon v-if="product.status === 'PUBLISHED'" name="lock" :size="12" class="lock-icon" />
             </el-descriptions-item>
             <el-descriptions-item label="产品品类">
               {{ product.category }}
-              <el-icon v-if="product.status === 'PUBLISHED'" class="lock-icon"><Lock /></el-icon>
+              <AppIcon v-if="product.status === 'PUBLISHED'" name="lock" :size="12" class="lock-icon" />
             </el-descriptions-item>
             <el-descriptions-item label="PID">{{ product.pid }}</el-descriptions-item>
             <el-descriptions-item label="通信方式">
               <el-tag :type="product.protocol === 'MQTT' ? 'primary' : 'warning'" size="small">
                 {{ product.protocol }}
               </el-tag>
-              <el-icon v-if="product.status === 'PUBLISHED'" class="lock-icon"><Lock /></el-icon>
+              <AppIcon v-if="product.status === 'PUBLISHED'" name="lock" :size="12" class="lock-icon" />
             </el-descriptions-item>
             <el-descriptions-item label="状态">
               <el-tag :type="getStatusType(product.status)">{{ getStatusText(product.status) }}</el-tag>
@@ -115,11 +73,11 @@
           <span>物模型管理</span>
           <div class="header-buttons">
             <el-button @click="handleImportTemplate" :disabled="product.status === 'PUBLISHED'">
-              <el-icon><Download /></el-icon>
+              <AppIcon name="download" :size="15" style="margin-right:4px" />
               从品类模板导入
             </el-button>
             <el-button type="primary" @click="handleAddPoint" :disabled="product.status === 'PUBLISHED'">
-              <el-icon><Plus /></el-icon>
+              <AppIcon name="plus" :size="15" style="margin-right:4px" />
               手动添加功能点
             </el-button>
           </div>
@@ -164,9 +122,10 @@
               </template>
             </el-table-column>
             <el-table-column prop="description" label="描述" min-width="150" />
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" width="150" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" link @click="handleEditPoint(row)">编辑</el-button>
+                <el-button type="success" link @click="handleClonePoint(row)">克隆</el-button>
                 <el-button type="danger" link @click="handleDeletePoint(row)">删除</el-button>
               </template>
             </el-table-column>
@@ -185,9 +144,10 @@
             <el-table-column prop="name" label="功能名称" min-width="100" />
             <el-table-column prop="dataType" label="事件类型" width="100" />
             <el-table-column prop="description" label="描述" min-width="150" />
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" width="150" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" link @click="handleEditPoint(row)">编辑</el-button>
+                <el-button type="success" link @click="handleClonePoint(row)">克隆</el-button>
                 <el-button type="danger" link @click="handleDeletePoint(row)">删除</el-button>
               </template>
             </el-table-column>
@@ -206,9 +166,10 @@
             <el-table-column prop="name" label="功能名称" min-width="100" />
             <el-table-column prop="dataType" label="调用类型" width="100" />
             <el-table-column prop="description" label="描述" min-width="150" />
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" width="150" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" link @click="handleEditPoint(row)">编辑</el-button>
+                <el-button type="success" link @click="handleClonePoint(row)">克隆</el-button>
                 <el-button type="danger" link @click="handleDeletePoint(row)">删除</el-button>
               </template>
             </el-table-column>
@@ -224,11 +185,11 @@
         </el-alert>
         <div class="export-buttons">
           <el-button size="large" @click="handlePreviewJson">
-            <el-icon><View /></el-icon>
+            <AppIcon name="eye" :size="16" style="margin-right:4px" />
             预览JSON
           </el-button>
           <el-button type="success" size="large" @click="handleExportJson">
-            <el-icon><Download /></el-icon>
+            <AppIcon name="download" :size="16" style="margin-right:4px" />
             导出JSON文件
           </el-button>
         </div>
@@ -277,110 +238,152 @@
       </template>
     </el-dialog>
 
-    <!-- 添加/编辑功能点弹窗 - 根据数据类型动态显示字段 -->
-    <el-dialog v-model="showPointDialog" :title="isEditPoint ? '编辑功能点' : '添加功能点'" width="650px">
-      <el-form :model="pointForm" :rules="pointRules" ref="pointFormRef" label-width="100px">
-        <el-form-item label="标识符" prop="pointId">
-          <el-input v-model="pointForm.pointId" placeholder="如 bed_position" />
-        </el-form-item>
-        <el-form-item label="功能名称" prop="name">
-          <el-input v-model="pointForm.name" placeholder="如 睡床位置" />
-        </el-form-item>
+    <!-- 添加/编辑功能点弹窗 - 卡片选择 + 实时JSON预览 -->
+    <el-dialog v-model="showPointDialog" :title="isEditPoint ? '编辑功能点' : '添加功能点'" width="940px" class="point-dialog">
+      <div class="point-dialog-layout">
+        <!-- 左侧表单 -->
+        <div class="point-form-col">
+          <el-form :model="pointForm" :rules="pointRules" ref="pointFormRef" label-width="100px">
+            <el-form-item label="标识符" prop="pointId">
+              <el-input v-model="pointForm.pointId" placeholder="如 bed_position（英文/下划线）" />
+            </el-form-item>
+            <el-form-item label="功能名称" prop="name">
+              <el-input v-model="pointForm.name" placeholder="如 睡床位置" />
+            </el-form-item>
 
-        <el-form-item label="数据类型" prop="dataType">
-          <el-select v-model="pointForm.dataType" placeholder="选择数据类型" style="width: 100%;" @change="handleDataTypeChange">
-            <el-option label="int (整数)" value="int" />
-            <el-option label="float (浮点数)" value="float" />
-            <el-option label="bool (布尔)" value="bool" />
-            <el-option label="string (字符串)" value="string" />
-            <el-option label="enum (枚举)" value="enum" />
-          </el-select>
-        </el-form-item>
-
-        <!-- int/float 类型额外字段 -->
-        <template v-if="pointForm.dataType === 'int' || pointForm.dataType === 'float'">
-          <el-form-item label="读写类型" prop="access">
-            <el-radio-group v-model="pointForm.access">
-              <el-radio label="readOnly">只读</el-radio>
-              <el-radio label="readWrite">可读可写</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="单位">
-            <el-input v-model="pointForm.unit" placeholder="如 %、℃、bpm" />
-          </el-form-item>
-          <el-form-item label="取值范围">
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <el-input v-model="pointForm.rangeMin" placeholder="最小值" />
-              </el-col>
-              <el-col :span="12">
-                <el-input v-model="pointForm.rangeMax" placeholder="最大值" />
-              </el-col>
-            </el-row>
-          </el-form-item>
-        </template>
-
-        <!-- bool 类型额外字段 -->
-        <template v-if="pointForm.dataType === 'bool'">
-          <el-form-item label="读写类型" prop="access">
-            <el-radio-group v-model="pointForm.access">
-              <el-radio label="readOnly">只读</el-radio>
-              <el-radio label="readWrite">可读可写</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="默认值">
-            <el-radio-group v-model="pointForm.defaultValue">
-              <el-radio label="false">false</el-radio>
-              <el-radio label="true">true</el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </template>
-
-        <!-- string 类型额外字段 -->
-        <template v-if="pointForm.dataType === 'string'">
-          <el-form-item label="读写类型" prop="access">
-            <el-radio-group v-model="pointForm.access">
-              <el-radio label="readOnly">只读</el-radio>
-              <el-radio label="readWrite">可读可写</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="最大长度">
-            <el-input-number v-model="pointForm.maxLength" :min="1" :max="10000" placeholder="字符数" />
-          </el-form-item>
-        </template>
-
-        <!-- enum 类型额外字段 -->
-        <template v-if="pointForm.dataType === 'enum'">
-          <el-form-item label="读写类型" prop="access">
-            <el-radio-group v-model="pointForm.access">
-              <el-radio label="readOnly">只读</el-radio>
-              <el-radio label="readWrite">可读可写</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="枚举值列表">
-            <div class="enum-list">
-              <div v-for="(item, index) in enumValues" :key="index" class="enum-item">
-                <el-input v-model="item.value" placeholder="值" style="width: 120px;" />
-                <el-input v-model="item.description" placeholder="描述" style="width: 150px;" />
-                <el-button type="danger" link @click="removeEnumValue(index)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
+            <el-form-item label="数据类型" prop="dataType">
+              <div class="datatype-grid">
+                <div
+                  v-for="dt in dataTypeOptions"
+                  :key="dt.value"
+                  class="datatype-card"
+                  :class="{ 'datatype-active': pointForm.dataType === dt.value }"
+                  @click="selectDataType(dt.value)"
+                >
+                  <span class="dt-icon">{{ dt.icon }}</span>
+                  <div class="dt-info">
+                    <span class="dt-label">{{ dt.label }}</span>
+                    <span class="dt-desc">{{ dt.desc }}</span>
+                  </div>
+                </div>
               </div>
-              <el-button type="primary" link @click="addEnumValue">
-                <el-icon><Plus /></el-icon> 添加枚举值
-              </el-button>
-            </div>
-          </el-form-item>
-        </template>
+            </el-form-item>
 
-        <el-form-item label="描述">
-          <el-input v-model="pointForm.description" type="textarea" rows="2" />
-        </el-form-item>
-      </el-form>
+            <!-- int/float 类型额外字段 -->
+            <template v-if="pointForm.dataType === 'int' || pointForm.dataType === 'float'">
+              <el-form-item label="读写类型" prop="access">
+                <el-radio-group v-model="pointForm.access">
+                  <el-radio label="readOnly">只读</el-radio>
+                  <el-radio label="readWrite">可读可写</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="单位">
+                <div class="unit-input-row">
+                  <el-input v-model="pointForm.unit" placeholder="如 %、℃、bpm" style="flex: 1" />
+                  <div class="unit-presets">
+                    <el-tag
+                      v-for="u in commonUnits" :key="u"
+                      class="unit-preset-tag"
+                      :class="{ 'unit-active': pointForm.unit === u }"
+                      @click="pointForm.unit = u"
+                    >{{ u }}</el-tag>
+                  </div>
+                </div>
+              </el-form-item>
+              <el-form-item label="取值范围">
+                <el-row :gutter="8">
+                  <el-col :span="11"><el-input v-model="pointForm.rangeMin" placeholder="最小值" /></el-col>
+                  <el-col :span="2" style="text-align:center; line-height:32px; color:#999">~</el-col>
+                  <el-col :span="11"><el-input v-model="pointForm.rangeMax" placeholder="最大值" /></el-col>
+                </el-row>
+              </el-form-item>
+              <el-form-item label="步长">
+                <el-input v-model="pointForm.step" placeholder="如 1、0.1、0.01" style="width: 180px" />
+              </el-form-item>
+            </template>
+
+            <!-- bool 类型额外字段 -->
+            <template v-if="pointForm.dataType === 'bool'">
+              <el-form-item label="读写类型" prop="access">
+                <el-radio-group v-model="pointForm.access">
+                  <el-radio label="readOnly">只读</el-radio>
+                  <el-radio label="readWrite">可读可写</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="true 含义">
+                <el-input v-model="pointForm.trueLabel" placeholder="如：开、启用、正常" />
+              </el-form-item>
+              <el-form-item label="false 含义">
+                <el-input v-model="pointForm.falseLabel" placeholder="如：关、禁用、异常" />
+              </el-form-item>
+            </template>
+
+            <!-- string 类型额外字段 -->
+            <template v-if="pointForm.dataType === 'string'">
+              <el-form-item label="读写类型" prop="access">
+                <el-radio-group v-model="pointForm.access">
+                  <el-radio label="readOnly">只读</el-radio>
+                  <el-radio label="readWrite">可读可写</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="最大长度">
+                <el-input-number v-model="pointForm.maxLength" :min="1" :max="10000" />
+                <span style="margin-left: 8px; color: #909399; font-size: 13px">字符</span>
+              </el-form-item>
+            </template>
+
+            <!-- enum 类型额外字段 -->
+            <template v-if="pointForm.dataType === 'enum'">
+              <el-form-item label="读写类型" prop="access">
+                <el-radio-group v-model="pointForm.access">
+                  <el-radio label="readOnly">只读</el-radio>
+                  <el-radio label="readWrite">可读可写</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="枚举值">
+                <div class="enum-list">
+                  <div v-for="(item, index) in enumValues" :key="index" class="enum-item">
+                    <el-input v-model="item.value" placeholder="值（如 0、1）" style="width: 110px;" />
+                    <span style="color:#c0c4cc; margin: 0 4px">→</span>
+                    <el-input v-model="item.description" placeholder="含义（如 关、开）" style="width: 140px;" />
+                    <el-button type="danger" link @click="removeEnumValue(index)">
+                      <AppIcon name="trash" :size="14" />
+                    </el-button>
+                  </div>
+                  <el-button type="primary" link @click="addEnumValue">
+                    <AppIcon name="plus" :size="14" style="margin-right:3px" /> 添加枚举值
+                  </el-button>
+                </div>
+              </el-form-item>
+            </template>
+
+            <!-- struct 类型提示 -->
+            <template v-if="pointForm.dataType === 'struct'">
+              <el-alert type="info" :closable="false" style="margin-bottom: 12px">
+                结构体类型将包含多个子字段，请在保存后通过子字段管理功能配置内部属性。
+              </el-alert>
+            </template>
+
+            <el-form-item label="描述">
+              <el-input v-model="pointForm.description" type="textarea" :rows="2" placeholder="功能点的业务描述" />
+            </el-form-item>
+          </el-form>
+        </div>
+
+        <!-- 右侧实时JSON预览 -->
+        <div class="point-preview-col">
+          <div class="preview-title">
+            <AppIcon name="layers" :size="16" style="margin-right:6px;vertical-align:middle" />
+            实时 JSON Schema
+          </div>
+          <pre class="point-json-preview">{{ currentPointJson }}</pre>
+          <div class="preview-hint">配置实时同步 · 所见即所得</div>
+        </div>
+      </div>
 
       <template #footer>
         <el-button @click="showPointDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSavePoint">确定</el-button>
+        <el-button type="primary" @click="handleSavePoint">确定保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -390,7 +393,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Plus, Delete, Lock, Download, View } from '@element-plus/icons-vue'
+import AppIcon from '@/components/AppIcon.vue'
+import CategoryIcon from '@/components/CategoryIcon.vue'
 import { productApi } from '../../api/product'
 import { thingModelApi } from '../../api/thingModel'
 
@@ -418,6 +422,17 @@ const showJsonPreview = ref(false)
 // 枚举值列表
 const enumValues = ref([])
 
+const dataTypeOptions = [
+  { value: 'int', icon: '#', label: 'int 整数', desc: '温度、湿度、计数' },
+  { value: 'float', icon: 'π', label: 'float 浮点', desc: '精确数值、坐标' },
+  { value: 'bool', icon: '◉', label: 'bool 布尔', desc: '开关、启停状态' },
+  { value: 'string', icon: 'Aa', label: 'string 字符串', desc: 'IP地址、标签' },
+  { value: 'enum', icon: '≡', label: 'enum 枚举', desc: '模式、档位选择' },
+  { value: 'struct', icon: '{}', label: 'struct 结构体', desc: '复杂嵌套数据' }
+]
+
+const commonUnits = ['℃', '%', 'bpm', 'mm', 'kg', 'lux', 'V', 'mA', 'Hz', 'rpm']
+
 const pointForm = reactive({
   id: null,
   pointId: '',
@@ -427,8 +442,11 @@ const pointForm = reactive({
   unit: '',
   rangeMin: '',
   rangeMax: '',
+  step: '',
   maxLength: null,
   defaultValue: '',
+  trueLabel: '',
+  falseLabel: '',
   description: ''
 })
 
@@ -456,6 +474,37 @@ const formattedJson = computed(() => {
     events: events.value,
     commands: commands.value
   }, null, 2)
+})
+
+const currentPointJson = computed(() => {
+  const schema = {
+    identifier: pointForm.pointId || 'identifier',
+    name: pointForm.name || '功能名称',
+    type: activeTab.value === 'properties' ? 'property' : activeTab.value === 'events' ? 'event' : 'command',
+    dataType: { type: pointForm.dataType }
+  }
+  if (['int', 'float'].includes(pointForm.dataType)) {
+    schema.dataType.specs = {
+      min: pointForm.rangeMin !== '' ? Number(pointForm.rangeMin) : 0,
+      max: pointForm.rangeMax !== '' ? Number(pointForm.rangeMax) : 100,
+      unit: pointForm.unit || '',
+      step: pointForm.step || 1
+    }
+    schema.accessMode = pointForm.access
+  } else if (pointForm.dataType === 'bool') {
+    schema.dataType.specs = { 'true': pointForm.trueLabel || '是', 'false': pointForm.falseLabel || '否' }
+    schema.accessMode = pointForm.access
+  } else if (pointForm.dataType === 'string') {
+    schema.dataType.specs = { maxLength: pointForm.maxLength || 255 }
+    schema.accessMode = pointForm.access
+  } else if (pointForm.dataType === 'enum') {
+    const specs = {}
+    enumValues.value.forEach(ev => { if (ev.value) specs[ev.value] = ev.description })
+    schema.dataType.specs = specs
+    schema.accessMode = pointForm.access
+  }
+  if (pointForm.description) schema.description = pointForm.description
+  return JSON.stringify(schema, null, 2)
 })
 
 // 方法
@@ -669,11 +718,28 @@ const handleDeletePoint = async (row) => {
 }
 
 const handleDataTypeChange = () => {
-  // 切换数据类型时重置相关字段
   enumValues.value = []
   pointForm.rangeMin = ''
   pointForm.rangeMax = ''
+  pointForm.step = ''
   pointForm.maxLength = null
+  pointForm.trueLabel = ''
+  pointForm.falseLabel = ''
+}
+
+const selectDataType = (type) => {
+  pointForm.dataType = type
+  handleDataTypeChange()
+}
+
+const handleClonePoint = (row) => {
+  isEditPoint.value = false
+  Object.assign(pointForm, { ...row, id: null, pointId: row.pointId + '_copy', name: row.name + '（克隆）' })
+  if (row.rangeJson) {
+    try { const r = JSON.parse(row.rangeJson); pointForm.rangeMin = r.min; pointForm.rangeMax = r.max } catch {}
+  }
+  enumValues.value = row.enumValuesJson ? (() => { try { return JSON.parse(row.enumValuesJson) } catch { return [] } })() : []
+  showPointDialog.value = true
 }
 
 const addEnumValue = () => {
@@ -766,7 +832,8 @@ const resetPointForm = () => {
   Object.assign(pointForm, {
     id: null, pointId: '', name: '', dataType: 'int',
     access: 'readWrite', unit: '', rangeMin: '', rangeMax: '',
-    maxLength: null, defaultValue: '', description: ''
+    step: '', maxLength: null, defaultValue: '',
+    trueLabel: '', falseLabel: '', description: ''
   })
   enumValues.value = []
   isEditPoint.value = false
@@ -878,8 +945,8 @@ const loadThingModelPoints = async () => {
 }
 
 .product-image:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 .product-image img {
@@ -888,32 +955,29 @@ const loadThingModelPoints = async () => {
   object-fit: cover;
 }
 
-/* 品类渐变背景 */
+/* 品类图标区 — 简洁白底 */
 .product-image.category-bed {
-  background: linear-gradient(135deg, #E0F2FE 0%, #7DD3FC 50%, #38BDF8 100%);
-  color: #0369A1;
+  background: #fff;
+  border: 1.5px solid #BAE6FD;
+  color: #0EA5E9;
 }
 
 .product-image.category-sofa {
-  background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #FBBF24 100%);
-  color: #B45309;
+  background: #fff;
+  border: 1.5px solid #FDE68A;
+  color: #D97706;
 }
 
 .product-image.category-pillow {
-  background: linear-gradient(135deg, #DCFCE7 0%, #86EFAC 50%, #4ADE80 100%);
-  color: #15803D;
+  background: #fff;
+  border: 1.5px solid #BBF7D0;
+  color: #16A34A;
 }
 
 .product-image.category-default {
-  background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 50%, #9CA3AF 100%);
-  color: #4B5563;
-}
-
-/* SVG图标 */
-.category-svg {
-  width: 100px;
-  height: 66px;
-  opacity: 0.9;
+  background: #fff;
+  border: 1.5px solid #E5E7EB;
+  color: #6B7280;
 }
 
 .category-label {
@@ -1038,5 +1102,154 @@ const loadThingModelPoints = async () => {
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* 功能点弹窗双栏布局 */
+.point-dialog-layout {
+  display: flex;
+  gap: 0;
+  min-height: 440px;
+}
+
+.point-form-col {
+  flex: 1;
+  padding-right: 16px;
+  overflow-y: auto;
+  max-height: 520px;
+}
+
+.point-preview-col {
+  width: 280px;
+  border-left: 1px solid #ebeef5;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.point-json-preview {
+  flex: 1;
+  background: #1e1e2e;
+  color: #a6e3a1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  line-height: 1.6;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  min-height: 360px;
+}
+
+.preview-hint {
+  font-size: 11px;
+  color: #c0c4cc;
+  text-align: center;
+}
+
+/* 数据类型卡片选择器 */
+.datatype-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.datatype-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1.5px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #fafafa;
+}
+
+.datatype-card:hover {
+  border-color: var(--color-primary, #1E4DA3);
+  background: #fff5f7;
+}
+
+.datatype-active {
+  border-color: var(--color-primary, #1E4DA3) !important;
+  background: #fff0f3 !important;
+  box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.15);
+}
+
+.dt-icon {
+  font-size: 15px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+}
+
+.dt-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dt-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #303133;
+  white-space: nowrap;
+}
+
+.dt-desc {
+  font-size: 11px;
+  color: #909399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 单位预设 */
+.unit-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.unit-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.unit-preset-tag {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 8px;
+  height: 22px;
+  line-height: 22px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.unit-preset-tag:hover { opacity: 0.8; }
+
+.unit-active {
+  background: var(--color-primary, #1E4DA3) !important;
+  color: white !important;
+  border-color: transparent !important;
 }
 </style>

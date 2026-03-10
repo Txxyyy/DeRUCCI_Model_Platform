@@ -12,28 +12,28 @@
 ## 功能特点
 
 - **产品管理** - 创建、管理产品信息，支持品类分类（智能床垫/电动床/智能枕头）和版本管理，产品状态流转（开发中→已发布）
-- **物模型管理** - 标准物模型（属性 + 事件 + 命令），支持品类标准模板机制，一键导入功能点
+- **物模型管理** - 标准物模型（属性 + 事件 + 命令），支持品类标准模板机制，一键导入功能点，实时 JSON Schema 预览
 - **设备接入** - 设备注册、关联产品（继承物模型），支持品类+产品二级联动选择器，自动生成设备密钥
+- **设备监控** - 实时属性面板（按传感器/控制/其他分组）、在线状态脉冲动画、告警时间线
 - **OTA管理** - 固件版本管理、升级任务创建与进度监控
-- **仪表盘** - 实时统计已发布产品数、设备总数、在线设备数
+- **仪表盘** - 实时统计已发布产品数、设备总数、在线率；SVG 环形图；最近活动时间线（支持刷新）
 
 ## 技术栈
 
 ### 后端
 - **框架**: Spring Boot 3.x（微服务架构，5个独立服务）
-- **持久化**: H2（开发）/ MySQL 8.0（生产），Spring Data JPA
+- **持久化**: H2 File 模式（开发，重启数据不丢失）/ MySQL 8.0（生产），Spring Data JPA
 - **API**: RESTful，Spring MVC
 
 ### 前端
 - **框架**: Vue 3 (Composition API)
 - **UI组件**: Element Plus 2.x
-- **状态管理**: Pinia
-- **构建工具**: Vite
-- **HTTP客户端**: Axios（多服务代理）
+- **构建工具**: Vite（含多服务代理配置）
+- **HTTP客户端**: Axios
 
 ### 基础设施（规划）
 - **数据库**: MySQL + Redis
-- **消息队列**: Kafka/RocketMQ
+- **消息队列**: Kafka / RocketMQ
 - **协议**: MQTT, CoAP, HTTP
 
 ## 项目结构
@@ -54,6 +54,7 @@ DeRUCCI_Model_Platform/
 ├── frontend/                        # Vue 3 前端
 │   └── src/
 │       ├── api/                     # API接口（按服务拆分）
+│       ├── components/              # 公共组件（AppIcon、CategoryIcon、EmptyState 等）
 │       ├── views/                   # 页面组件
 │       │   ├── Dashboard.vue        # 仪表盘
 │       │   ├── product/             # 产品管理
@@ -61,15 +62,15 @@ DeRUCCI_Model_Platform/
 │       │   ├── device/              # 设备管理
 │       │   └── ota/                 # OTA管理
 │       ├── router/                  # 路由配置
-│       └── stores/                  # Pinia状态管理
+│       └── stores/                  # Pinia 状态管理
 └── docs/                            # 项目文档
     ├── PRD/                         # 产品需求文档
     ├── API/                         # API接口设计
     ├── Database/                    # 数据库设计
     ├── UI/                          # UI原型设计
-    ├── Architecture/                # 架构设计（含.drawio图表）
-    ├── Design/                      # UI/UX设计规范
-    └── TDD/                         # TDD开发规划
+    ├── Architecture/                # 架构设计（含 .drawio 图表）
+    ├── Design/                      # UI/UX 设计规范
+    └── TDD/                         # TDD 开发规划
 ```
 
 ## 快速开始
@@ -80,17 +81,17 @@ DeRUCCI_Model_Platform/
 - Maven 3.8+
 - Node.js 18+
 
-> 开发环境使用内嵌 H2 数据库，无需安装 MySQL/Redis 即可启动。
+> 开发环境使用内嵌 H2 File 数据库，无需安装 MySQL/Redis 即可启动，数据持久保存在各服务的 `data/` 目录。
 
 ### 后端启动
 
 ```bash
-# 启动各业务服务（各服务目录下分别执行）
-cd backend/service/product-service && mvn spring-boot:run      # 端口 8082
-cd backend/service/thing-model-service && mvn spring-boot:run  # 端口 8083
-cd backend/service/device-service && mvn spring-boot:run       # 端口 8084
-cd backend/service/ota-service && mvn spring-boot:run          # 端口 8085
-cd backend/service/user-service && mvn spring-boot:run         # 端口 8081
+# 分别在各业务服务目录下执行（可并行启动）
+cd backend/service/product-service      && mvn spring-boot:run   # 端口 8082
+cd backend/service/thing-model-service  && mvn spring-boot:run   # 端口 8083
+cd backend/service/device-service       && mvn spring-boot:run   # 端口 8084
+cd backend/service/ota-service          && mvn spring-boot:run   # 端口 8085
+cd backend/service/user-service         && mvn spring-boot:run   # 端口 8081
 ```
 
 ### 前端启动
@@ -101,7 +102,7 @@ npm install
 npm run dev   # 访问 http://localhost:3000
 ```
 
-前端通过 Vite 代理将 API 请求转发至各后端服务，无需网关即可开发调试。
+前端通过 Vite 代理将 API 请求分发至各后端服务，无需网关即可本地开发调试。
 
 ## 服务端口
 
@@ -118,28 +119,36 @@ npm run dev   # 访问 http://localhost:3000
 
 | 模块 | 功能 | 状态 |
 |------|------|------|
-| 仪表盘 | 已发布产品数、设备总数、在线数统计 | ✅ |
+| 仪表盘 | KPI卡片、SVG环形图、最近活动时间线（可刷新）、快速入口 | ✅ |
 | 产品管理 | 产品列表（卡片视图）、新建/编辑/删除、状态发布 | ✅ |
-| 产品详情 | 基本信息 + 物模型功能点管理 + 模板导入 + JSON预览 | ✅ |
+| 产品详情 | 基本信息 + 物模型功能点管理 + 品类模板导入 + JSON预览/导出 | ✅ |
 | 品类模板 | 品类标准物模型模板展示与一键导入 | ✅ |
-| 物模型 | 功能点CRUD（属性/事件/命令），字段验证 | ✅ |
-| 设备管理 | 设备列表、注册设备（品类→产品二级选择）、详情监控 | ✅ |
+| 物模型 | 功能点 CRUD（属性/事件/命令），数据类型卡片选择器，实时 JSON Schema 预览 | ✅ |
+| 设备管理 | 设备列表、注册设备（品类→产品二级选择，自动生成密钥）、详情监控 | ✅ |
+| 设备监控 | 在线脉冲动画、属性分组展示、告警时间线 | ✅ |
 | OTA管理 | 固件版本列表、升级任务列表 | ✅ |
-| 数据持久化 | H2 File模式，重启数据不丢失 | ✅ |
+| 数据持久化 | H2 File 模式，重启数据不丢失 | ✅ |
 
 ## 开发规范
 
-- **需求开发流程**: 头脑风暴 → PRD完善 → UI/UX设计 → TDD开发 → 测试验证
-- **TDD开发**: 先写测试，再写实现代码
+本项目遵循以下开发流程：
+
+```
+需求 → 头脑风暴(Brainstorming) → PRD完善 → UI/UX设计 → TDD开发 → 测试验证
+```
+
+- **TDD 开发**: 先写测试，再写实现代码，详见 [TDD开发规划](docs/TDD/TDD开发规划.md)
 - **代码规范**: Google Java Style Guide + ESLint
+- **提交规范**: Conventional Commits
 
 详细规范见 [CLAUDE.md](CLAUDE.md)
 
 ## 文档
 
 - [产品需求文档 (PRD)](docs/PRD/)
-- [UI设计规范](docs/UI/UI_Design_v1.0.md)
-- [API接口设计](docs/API/)
+- [UI 设计规范](docs/UI/UI_Design_v1.0.md)
+- [UI/UX 设计规范（专业版）](docs/Design/UI_UX设计规范_ProMax.md)
+- [API 接口设计](docs/API/)
 - [数据库设计](docs/Database/)
 - [架构设计](docs/Architecture/)
 

@@ -38,7 +38,7 @@
             clearable
             @keyup.enter="handleSearch"
           >
-            <template #prefix><el-icon><Search /></el-icon></template>
+            <template #prefix><AppIcon name="search" :size="15" /></template>
           </el-input>
         </el-col>
         <el-col :span="3">
@@ -52,11 +52,11 @@
     <div class="action-bar">
       <div class="action-left">
         <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
+          <AppIcon name="plus" :size="15" style="margin-right:4px" />
           注册设备
         </el-button>
         <el-button @click="handleBatchImport">
-          <el-icon><Upload /></el-icon>
+          <AppIcon name="upload" :size="15" style="margin-right:4px" />
           批量导入
         </el-button>
       </div>
@@ -64,21 +64,21 @@
         <span class="selected-count">已选择 {{ selectedDevices.length }} 台设备</span>
         <el-dropdown @command="handleBatchCommand" trigger="click">
           <el-button type="primary" plain>
-            批量操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            批量操作<AppIcon name="chevron-down" :size="14" style="margin-left:4px" />
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="online">
-                <el-icon><Connection /></el-icon>批量上线
+                <AppIcon name="connection" :size="14" style="margin-right:6px" />批量上线
               </el-dropdown-item>
               <el-dropdown-item command="offline">
-                <el-icon><Remove /></el-icon>批量下线
+                <AppIcon name="remove" :size="14" style="margin-right:6px" />批量下线
               </el-dropdown-item>
               <el-dropdown-item command="ota">
-                <el-icon><Refresh /></el-icon>批量升级
+                <AppIcon name="refresh" :size="14" style="margin-right:6px" />批量升级
               </el-dropdown-item>
               <el-dropdown-item command="delete" divided>
-                <el-icon><Delete /></el-icon>批量删除
+                <AppIcon name="trash" :size="14" style="margin-right:6px" />批量删除
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -98,7 +98,7 @@
         <el-table-column label="设备名称" min-width="200">
           <template #default="{ row }">
             <div class="device-name" @click="handleViewDetail(row)">
-              <el-icon class="device-icon"><Monitor /></el-icon>
+              <AppIcon name="monitor" :size="15" class="device-icon" />
               <span>{{ row.name }}</span>
               <el-tag v-if="row.deviceType === 'TEST'" type="warning" size="small" effect="light" style="margin-left:6px">测试</el-tag>
             </div>
@@ -136,22 +136,22 @@
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleViewDetail(row)">
-              <el-icon><View /></el-icon>详情
+              <AppIcon name="eye" :size="14" style="margin-right:3px" />详情
             </el-button>
             <el-button type="primary" link @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>编辑
+              <AppIcon name="edit" :size="14" style="margin-right:3px" />编辑
             </el-button>
             <el-button
               :type="row.online ? 'warning' : 'success'"
               link
               @click="row.online ? handleOffline(row) : handleOnline(row)"
             >
-              <el-icon v-if="row.online"><TurnOff /></el-icon>
-              <el-icon v-else><Connection /></el-icon>
+              <AppIcon v-if="row.online" name="turn-off" :size="14" style="margin-right:3px" />
+              <AppIcon v-else name="connection" :size="14" style="margin-right:3px" />
               {{ row.online ? '下线' : '上线' }}
             </el-button>
             <el-button type="danger" link @click="handleDelete(row)">
-              <el-icon><Delete /></el-icon>删除
+              <AppIcon name="trash" :size="14" style="margin-right:3px" />删除
             </el-button>
           </template>
         </el-table-column>
@@ -232,7 +232,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, ArrowDown, Plus, Upload, Connection, Remove, Refresh, Delete, Monitor, View, Edit, TurnOff } from '@element-plus/icons-vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { deviceApi } from '../../api/device'
 import { productApi } from '../../api/product'
 

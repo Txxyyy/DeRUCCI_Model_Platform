@@ -21,7 +21,7 @@
           @keyup.enter="handleSearch"
         >
           <template #prefix>
-            <el-icon><Search /></el-icon>
+            <AppIcon name="search" :size="15" />
           </template>
         </el-input>
         <el-select v-model="filters.protocol" placeholder="通信方式" clearable class="filter-select">
@@ -38,7 +38,7 @@
       </div>
       <div class="search-right">
         <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
+          <AppIcon name="plus" :size="15" style="margin-right:4px" />
           添加产品
         </el-button>
       </div>
@@ -162,7 +162,7 @@
           <el-input v-model="form.pid" disabled>
             <template #append>
               <el-button @click="generatePid" title="重新生成PID">
-                <el-icon><Refresh /></el-icon>
+                <AppIcon name="refresh" :size="14" />
               </el-button>
             </template>
           </el-input>
@@ -182,7 +182,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, Plus, Picture, Refresh } from '@element-plus/icons-vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { productApi } from '../../api/product'
 
 const router = useRouter()
