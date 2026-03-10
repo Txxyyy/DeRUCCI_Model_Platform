@@ -68,9 +68,14 @@ public class DeviceService {
         Device device = deviceRepository.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("设备不存在"));
 
-        if (updateData.getName() != null) device.setName(updateData.getName());
-        if (updateData.getTags() != null) device.setTags(updateData.getTags());
-        if (updateData.getProperties() != null) device.setProperties(updateData.getProperties());
+        if (updateData.getName() != null)         device.setName(updateData.getName());
+        if (updateData.getTags() != null)         device.setTags(updateData.getTags());
+        if (updateData.getProperties() != null)   device.setProperties(updateData.getProperties());
+        if (updateData.getSerialNumber() != null) device.setSerialNumber(updateData.getSerialNumber());
+        if (updateData.getDeviceKey() != null)    device.setDeviceKey(updateData.getDeviceKey());
+        if (updateData.getProductId() != null)    device.setProductId(updateData.getProductId());
+        if (updateData.getProductName() != null)  device.setProductName(updateData.getProductName());
+        if (updateData.getThingModelId() != null) device.setThingModelId(updateData.getThingModelId());
 
         return deviceRepository.save(device);
     }
