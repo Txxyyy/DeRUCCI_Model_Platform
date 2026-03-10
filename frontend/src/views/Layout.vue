@@ -21,17 +21,7 @@
             <span>产品管理</span>
           </template>
           <el-menu-item index="/products">产品列表</el-menu-item>
-          <el-menu-item index="/products/categories">产品分类</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="/thing-models">
-          <template #title>
-            <el-icon><Connection /></el-icon>
-            <span>物模型</span>
-          </template>
-          <el-menu-item index="/thing-models/category">品类物模型 ⭐</el-menu-item>
-          <el-menu-item index="/thing-models/templates">模板库</el-menu-item>
-          <el-menu-item index="/thing-models/my">我的模型</el-menu-item>
+          <el-menu-item index="/products/category-templates">品类标准模板</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="/devices">
@@ -84,7 +74,7 @@
 </template>
 
 <script setup>
-import { House, User, Goods, Connection, Monitor, UploadFilled, UserFilled } from '@element-plus/icons-vue'
+import { House, Goods, Monitor, UploadFilled, UserFilled } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>

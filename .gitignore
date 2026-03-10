@@ -41,3 +41,14 @@ logs/
 # Temp
 tmp/
 temp/
+
+# H2 runtime database files
+**/data/*.mv.db
+**/data/*.lock.db
+**/data/*.trace.db
+
+# Claude local settings
+.claude/settings.local.json
+
+# Preview files
+preview-svg.html

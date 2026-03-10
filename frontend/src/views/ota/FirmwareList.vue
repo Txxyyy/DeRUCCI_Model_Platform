@@ -4,23 +4,19 @@
     <el-card class="filter-card">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-select v-model="filters.productId" placeholder="产品" clearable>
+          <el-select v-model="filters.productId" placeholder="产品" clearable @change="loadFirmwares">
             <el-option v-for="p in products" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-select v-model="filters.status" placeholder="版本状态" clearable>
-            <el-option label="测试版" value="TESTING" />
-            <el-option label="稳定版" value="STABLE" />
+          <el-select v-model="filters.status" placeholder="版本状态" clearable @change="loadFirmwares">
+            <el-option label="草稿" value="DRAFT" />
+            <el-option label="已发布" value="PUBLISHED" />
             <el-option label="废弃" value="DEPRECATED" />
           </el-select>
         </el-col>
         <el-col :span="8">
-          <el-input
-            v-model="filters.keyword"
-            placeholder="搜索版本号..."
-            clearable
-          >
+          <el-input v-model="filters.keyword" placeholder="搜索版本号..." clearable @clear="loadFirmwares">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
         </el-col>
@@ -32,10 +28,18 @@
 
     <!-- 固件列表 -->
     <el-card>
-      <el-table :data="filteredFirmwares" stripe>
+      <el-table :data="filteredFirmwares" stripe v-loading="loading">
         <el-table-column prop="version" label="版本" width="100" />
-        <el-table-column prop="productName" label="产品" width="120" />
-        <el-table-column prop="fileSize" label="文件大小" width="100" />
+        <el-table-column label="产品" width="120">
+          <template #default="{ row }">
+            {{ getProductName(row.productId) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="文件大小" width="100">
+          <template #default="{ row }">
+            {{ row.fileSize ? formatFileSize(row.fileSize) : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">
@@ -43,12 +47,15 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="uploadTime" label="上传时间" width="160" />
-        <el-table-column prop="changeLog" label="变更说明" min-width="200" />
+        <el-table-column label="上传时间" width="160">
+          <template #default="{ row }">
+            {{ formatTime(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="变更说明" min-width="200" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="success" link @click="handlePublish(row)" v-if="row.status === 'TESTING'">发布</el-button>
+            <el-button type="success" link @click="handlePublish(row)" v-if="row.status === 'DRAFT'">发布</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -64,11 +71,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="固件版本" prop="version">
-          <el-input v-model="form.version" placeholder="格式: v主版本.次版本.修订号">
-            <template #prepend>v</template>
-          </el-input>
+          <el-input v-model="form.version" placeholder="格式: 1.2.3" />
         </el-form-item>
-        <el-form-item label="固件文件" prop="file">
+        <el-form-item label="固件文件">
           <el-upload
             class="firmware-upload"
             drag
@@ -86,14 +91,8 @@
             </template>
           </el-upload>
         </el-form-item>
-        <el-form-item label="版本状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio label="TESTING">测试版</el-radio>
-            <el-radio label="STABLE">稳定版</el-radio>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item label="变更说明">
-          <el-input v-model="form.changeLog" type="textarea" rows="4" placeholder="请输入变更说明" />
+          <el-input v-model="form.description" type="textarea" rows="4" placeholder="请输入变更说明" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -108,79 +107,81 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, UploadFilled } from '@element-plus/icons-vue'
+import { otaApi } from '@/api/ota'
+import { productApi } from '@/api/product'
 
-const filters = reactive({
-  productId: '',
-  status: '',
-  keyword: ''
-})
-
-const firmwares = ref([
-  { id: 1, version: '1.2.3', productId: 1, productName: '智能床垫', fileSize: '2.5MB', status: 'STABLE', uploadTime: '2024-01-15 10:00:00', changeLog: '优化温度传感器精度' },
-  { id: 2, version: '1.2.2', productId: 1, productName: '智能床垫', fileSize: '2.4MB', status: 'STABLE', uploadTime: '2024-01-10 10:00:00', changeLog: '修复睡眠监测bug' },
-  { id: 3, version: '1.2.1', productId: 1, productName: '智能床垫', fileSize: '2.3MB', status: 'DEPRECATED', uploadTime: '2023-12-20 10:00:00', changeLog: '优化性能' },
-  { id: 4, version: '1.2.0', productId: 1, productName: '智能床垫', fileSize: '2.2MB', status: 'DEPRECATED', uploadTime: '2023-12-15 10:00:00', changeLog: '新增功能' },
-  { id: 5, version: '1.1.0', productId: 2, productName: '智能枕头', fileSize: '1.8MB', status: 'STABLE', uploadTime: '2023-12-01 10:00:00', changeLog: '初始版本' }
-])
-
-const products = ref([
-  { id: 1, name: '智能床垫' },
-  { id: 2, name: '智能枕头' },
-  { id: 3, name: '智能沙发' }
-])
-
+const filters = reactive({ productId: '', status: '', keyword: '' })
+const firmwares = ref([])
+const products = ref([])
+const loading = ref(false)
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref(null)
-const form = reactive({
-  id: null,
-  productId: null,
-  version: '',
-  file: null,
-  status: 'TESTING',
-  changeLog: ''
-})
+const form = reactive({ productId: null, version: '', file: null, description: '' })
 
 const rules = {
   productId: [{ required: true, message: '请选择产品', trigger: 'change' }],
-  version: [{ required: true, message: '请输入固件版本', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择版本状态', trigger: 'change' }]
+  version: [{ required: true, message: '请输入固件版本', trigger: 'blur' }]
 }
 
 const filteredFirmwares = computed(() => {
   let result = firmwares.value
-
-  if (filters.productId) {
-    result = result.filter(f => f.productId === filters.productId)
-  }
-  if (filters.status) {
-    result = result.filter(f => f.status === filters.status)
-  }
+  if (filters.productId) result = result.filter(f => f.productId === filters.productId)
+  if (filters.status) result = result.filter(f => f.status === filters.status)
   if (filters.keyword) {
     const kw = filters.keyword.toLowerCase()
     result = result.filter(f => f.version.toLowerCase().includes(kw))
   }
-
   return result
 })
 
 const getStatusType = (status) => {
-  const map = { TESTING: 'warning', STABLE: 'success', DEPRECATED: 'info' }
+  const map = { DRAFT: 'info', PUBLISHED: 'success', DEPRECATED: 'warning' }
   return map[status] || 'info'
 }
 
 const getStatusText = (status) => {
-  const map = { TESTING: '测试版', STABLE: '稳定版', DEPRECATED: '废弃' }
+  const map = { DRAFT: '草稿', PUBLISHED: '已发布', DEPRECATED: '废弃' }
   return map[status] || status
 }
 
-const handleAdd = () => {
-  Object.assign(form, { id: null, productId: null, version: '', file: null, status: 'TESTING', changeLog: '' })
-  dialogVisible.value = true
+const getProductName = (productId) => {
+  return products.value.find(p => p.id === productId)?.name || '-'
 }
 
-const handleEdit = (row) => {
-  Object.assign(form, { ...row })
+const formatFileSize = (bytes) => {
+  if (!bytes) return '-'
+  return (bytes / 1024 / 1024).toFixed(1) + 'MB'
+}
+
+const formatTime = (time) => {
+  if (!time) return '-'
+  return new Date(time).toLocaleString('zh-CN')
+}
+
+const loadFirmwares = async () => {
+  loading.value = true
+  try {
+    const res = await otaApi.getFirmwares()
+    if (res?.code === 200) firmwares.value = res.data || []
+  } catch (e) {
+    console.error('加载固件列表失败:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadProducts = async () => {
+  try {
+    const res = await productApi.getList()
+    if (res?.code === 200) products.value = res.data || []
+  } catch (e) {
+    console.error('加载产品列表失败:', e)
+  }
+}
+
+const handleAdd = () => {
+  Object.assign(form, { productId: null, version: '', file: null, description: '' })
   dialogVisible.value = true
 }
 
@@ -191,36 +192,42 @@ const handleFileChange = (file) => {
 const handleSubmit = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
-
-  if (!form.file && !form.id) {
-    ElMessage.warning('请上传固件文件')
-    return
-  }
-
   submitLoading.value = true
-  setTimeout(() => {
-    if (!form.id) {
-      firmwares.value.unshift({
-        id: Date.now(),
-        ...form,
-        productName: products.value.find(p => p.id === form.productId)?.name,
-        fileSize: '2.5MB',
-        uploadTime: new Date().toLocaleString()
-      })
-      ElMessage.success('上传成功')
-    } else {
-      const idx = firmwares.value.findIndex(f => f.id === form.id)
-      if (idx !== -1) Object.assign(firmwares.value[idx], form)
-      ElMessage.success('更新成功')
+  try {
+    const data = {
+      name: form.version,
+      version: form.version,
+      productId: form.productId,
+      description: form.description,
+      status: 'DRAFT'
     }
-    dialogVisible.value = false
+    const res = await otaApi.createFirmware(data)
+    if (res?.code === 200) {
+      ElMessage.success('上传成功')
+      dialogVisible.value = false
+      await loadFirmwares()
+    } else {
+      ElMessage.error(res?.message || '上传失败')
+    }
+  } catch (e) {
+    ElMessage.error('上传失败: ' + (e.message || '未知错误'))
+  } finally {
     submitLoading.value = false
-  }, 1500)
+  }
 }
 
-const handlePublish = (row) => {
-  row.status = 'STABLE'
-  ElMessage.success('发布成功')
+const handlePublish = async (row) => {
+  try {
+    const res = await otaApi.publishFirmware(row.id)
+    if (res?.code === 200) {
+      ElMessage.success('发布成功')
+      await loadFirmwares()
+    } else {
+      ElMessage.error(res?.message || '发布失败')
+    }
+  } catch (e) {
+    ElMessage.error('发布失败: ' + (e.message || '未知错误'))
+  }
 }
 
 const handleDelete = async (row) => {
@@ -228,16 +235,16 @@ const handleDelete = async (row) => {
   firmwares.value = firmwares.value.filter(f => f.id !== row.id)
   ElMessage.success('删除成功')
 }
+
+onMounted(() => {
+  loadFirmwares()
+  loadProducts()
+})
 </script>
 
 <style scoped>
 .filter-card { margin-bottom: 20px; }
 
-.firmware-upload {
-  width: 100%;
-}
-
-.firmware-upload :deep(.el-upload-dragger) {
-  width: 100%;
-}
+.firmware-upload { width: 100%; }
+.firmware-upload :deep(.el-upload-dragger) { width: 100%; }
 </style>

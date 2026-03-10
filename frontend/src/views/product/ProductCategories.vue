@@ -8,7 +8,7 @@
         </div>
       </template>
 
-      <el-table :data="categories" stripe>
+      <el-table :data="categories" stripe v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="分类名称" />
         <el-table-column prop="code" label="分类编码" />
@@ -32,7 +32,7 @@
         <el-form-item label="分类编码" prop="code">
           <el-input v-model="form.code" placeholder="请输入分类编码" :disabled="isEdit" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
+        <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" rows="3" placeholder="请输入描述" />
         </el-form-item>
       </el-form>
@@ -47,28 +47,31 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { categoryApi } from '@/api/product'
 
-const categories = ref([
-  { id: 1, name: '床垫', code: 'BED', productCount: 5, description: '智能床垫产品' },
-  { id: 2, name: '枕头', code: 'PILLOW', productCount: 3, description: '智能枕头产品' },
-  { id: 3, name: '沙发', code: 'SOFA', productCount: 2, description: '智能沙发产品' },
-  { id: 4, name: '椅子', code: 'CHAIR', productCount: 1, description: '智能椅子产品' }
-])
-
+const categories = ref([])
+const loading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 const formRef = ref(null)
-const form = reactive({
-  id: null,
-  name: '',
-  code: '',
-  description: ''
-})
+const form = reactive({ id: null, name: '', code: '', description: '' })
 
 const rules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入分类编码', trigger: 'blur' }]
+}
+
+const loadCategories = async () => {
+  loading.value = true
+  try {
+    const res = await categoryApi.getList()
+    if (res?.code === 200) categories.value = res.data || []
+  } catch (e) {
+    console.error('加载分类失败:', e)
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleAdd = () => {
@@ -79,35 +82,53 @@ const handleAdd = () => {
 
 const handleEdit = (row) => {
   isEdit.value = true
-  Object.assign(form, { ...row })
+  Object.assign(form, { id: row.id, name: row.name, code: row.code, description: row.description || '' })
   dialogVisible.value = true
 }
 
 const handleSubmit = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
-
   submitLoading.value = true
-  setTimeout(() => {
+  try {
+    let res
     if (!isEdit.value) {
-      form.id = Date.now()
-      categories.value.push({ ...form, productCount: 0 })
-      ElMessage.success('创建成功')
+      res = await categoryApi.create({ name: form.name, code: form.code, description: form.description })
     } else {
-      const idx = categories.value.findIndex(c => c.id === form.id)
-      if (idx !== -1) Object.assign(categories.value[idx], form)
-      ElMessage.success('更新成功')
+      res = await categoryApi.update(form.id, { name: form.name, description: form.description })
     }
-    dialogVisible.value = false
+    if (res?.code === 200) {
+      ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+      dialogVisible.value = false
+      await loadCategories()
+    } else {
+      ElMessage.error(res?.message || '操作失败')
+    }
+  } catch (e) {
+    ElMessage.error('操作失败: ' + (e.message || '未知错误'))
+  } finally {
     submitLoading.value = false
-  }, 500)
+  }
 }
 
 const handleDelete = async (row) => {
-  await ElMessageBox.confirm(`确定删除分类 ${row.name}?`, '提示', { type: 'warning' })
-  categories.value = categories.value.filter(c => c.id !== row.id)
-  ElMessage.success('删除成功')
+  await ElMessageBox.confirm(`确定删除分类「${row.name}」?`, '提示', { type: 'warning' })
+  try {
+    const res = await categoryApi.delete(row.id)
+    if (res?.code === 200) {
+      ElMessage.success('删除成功')
+      await loadCategories()
+    } else {
+      ElMessage.error(res?.message || '删除失败')
+    }
+  } catch (e) {
+    ElMessage.error('删除失败: ' + (e.message || '未知错误'))
+  }
 }
+
+onMounted(() => {
+  loadCategories()
+})
 </script>
 
 <style scoped>

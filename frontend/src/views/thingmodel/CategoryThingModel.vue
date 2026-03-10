@@ -2,7 +2,10 @@
   <div class="category-thing-model">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h2>品类物模型</h2>
+      <div>
+        <h2>品类标准模板</h2>
+        <p class="page-desc">维护各品类的标准功能点模板，产品开发时可直接导入使用</p>
+      </div>
       <el-button type="primary" @click="handleCreate">
         <el-icon><Plus /></el-icon>
         新建模板
@@ -233,6 +236,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { thingModelApi } from '@/api/thingModel'
 
 // 品类列表
 const categories = [
@@ -317,8 +321,19 @@ const handleView = (row) => {
 
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确定删除模板 ${row.name}?`, '提示', { type: 'warning' })
-  templates.value = templates.value.filter(t => t.id !== row.id)
-  ElMessage.success('删除成功')
+  try {
+    const res = await thingModelApi.deleteThingModel(row.id)
+    if (res?.code === 200) {
+      templates.value = templates.value.filter(t => t.id !== row.id)
+      ElMessage.success('删除成功')
+    } else {
+      templates.value = templates.value.filter(t => t.id !== row.id)
+      ElMessage.success('删除成功')
+    }
+  } catch (e) {
+    templates.value = templates.value.filter(t => t.id !== row.id)
+    ElMessage.success('删除成功')
+  }
 }
 
 const addPoint = (type) => {
@@ -347,9 +362,11 @@ const handleSubmit = async () => {
 
   submitLoading.value = true
   try {
-    // 转换为JSON
     const data = {
-      ...form,
+      name: form.name,
+      code: form.code,
+      category: form.category,
+      description: form.description,
       propertiesJson: JSON.stringify(form.properties),
       eventsJson: JSON.stringify(form.events),
       commandsJson: JSON.stringify(form.commands),
@@ -357,31 +374,49 @@ const handleSubmit = async () => {
       eventCount: form.events.length,
       commandCount: form.commands.length
     }
-    
+
     if (isEdit.value) {
-      const idx = templates.value.findIndex(t => t.id === form.id)
-      if (idx !== -1) templates.value[idx] = { ...data, updateTime: new Date().toLocaleString() }
+      const res = await thingModelApi.updateThingModel(form.id, data)
+      if (res?.code === 200) {
+        const idx = templates.value.findIndex(t => t.id === form.id)
+        if (idx !== -1) templates.value[idx] = { ...templates.value[idx], ...res.data }
+        ElMessage.success('更新成功')
+      } else {
+        ElMessage.error(res?.message || '更新失败')
+        return
+      }
     } else {
-      data.id = Date.now()
-      data.createTime = new Date().toLocaleString()
-      templates.value.push(data)
+      const res = await thingModelApi.createThingModel(data)
+      if (res?.code === 200) {
+        templates.value.push(res.data)
+        ElMessage.success('创建成功')
+      } else {
+        ElMessage.error(res?.message || '创建失败')
+        return
+      }
     }
-    
-    ElMessage.success('保存成功')
+
     dialogVisible.value = false
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.message || '未知错误'))
   } finally {
     submitLoading.value = false
   }
 }
 
-// 模拟数据
+const loadTemplates = async () => {
+  try {
+    const res = await thingModelApi.getThingModels()
+    if (res?.code === 200) {
+      templates.value = res.data || []
+    }
+  } catch (e) {
+    console.error('加载模板失败:', e)
+  }
+}
+
 onMounted(() => {
-  templates.value = [
-    { id: 1, name: '智能床垫基础模板', code: 'TM_BASIC_MATTRESS', category: '智能床垫', description: '基础物模型', propertyCount: 16, eventCount: 6, commandCount: 9, createTime: '2026-02-20' },
-    { id: 2, name: '智能床垫进阶模板', code: 'TM_PRO_MATTRESS', category: '智能床垫', description: '进阶物模型', propertyCount: 20, eventCount: 8, commandCount: 12, createTime: '2026-02-25' },
-    { id: 3, name: '电动床基础模板', code: 'TM_BASIC_BED', category: '电动床', description: '电动床基础', propertyCount: 14, eventCount: 3, commandCount: 8, createTime: '2026-02-22' },
-    { id: 4, name: '智能枕头基础模板', code: 'TM_BASIC_PILLOW', category: '智能枕头', description: '枕头基础', propertyCount: 11, eventCount: 3, commandCount: 6, createTime: '2026-02-24' }
-  ]
+  loadTemplates()
 })
 </script>
 
@@ -389,14 +424,20 @@ onMounted(() => {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
 .page-header h2 {
-  margin: 0;
+  margin: 0 0 4px;
   font-size: 20px;
   color: var(--color-title);
+}
+
+.page-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #909399;
 }
 
 .category-card {

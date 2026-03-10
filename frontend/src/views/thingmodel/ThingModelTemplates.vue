@@ -69,62 +69,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { thingModelApi } from '@/api/thingModel'
 
 const router = useRouter()
 
-const templates = ref([
-  {
-    id: 1,
-    name: '温度传感器模板',
-    version: 'v1.0.0',
-    propertyCount: 2,
-    eventCount: 2,
-    commandCount: 1
-  },
-  {
-    id: 2,
-    name: '开关设备模板',
-    version: 'v1.0.0',
-    propertyCount: 2,
-    eventCount: 1,
-    commandCount: 3
-  },
-  {
-    id: 3,
-    name: '调光灯模板',
-    version: 'v1.0.0',
-    propertyCount: 3,
-    eventCount: 1,
-    commandCount: 4
-  },
-  {
-    id: 4,
-    name: '智能床垫模板',
-    version: 'v1.0.0',
-    propertyCount: 12,
-    eventCount: 5,
-    commandCount: 8
-  },
-  {
-    id: 5,
-    name: '智能枕头模板',
-    version: 'v1.0.0',
-    propertyCount: 8,
-    eventCount: 3,
-    commandCount: 5
-  },
-  {
-    id: 6,
-    name: '环境监测模板',
-    version: 'v1.0.0',
-    propertyCount: 5,
-    eventCount: 3,
-    commandCount: 2
-  }
-])
+const templates = ref([])
 
 const previewVisible = ref(false)
 const activeTab = ref('properties')
@@ -134,12 +86,30 @@ const previewData = reactive({
   commands: []
 })
 
+const loadTemplates = async () => {
+  try {
+    const res = await thingModelApi.getThingModels()
+    if (res?.code === 200) templates.value = res.data || []
+  } catch (e) {
+    console.error('加载模板失败:', e)
+  }
+}
+
 const handleUseTemplate = (template) => {
   ElMessage.success(`已选择模板: ${template.name}`)
   router.push('/thing-models/my')
 }
 
 const handlePreview = (template) => {
+  // 尝试解析后端存储的 JSON 数据
+  try {
+    previewData.properties = template.propertiesJson ? JSON.parse(template.propertiesJson) : []
+    previewData.events = template.eventsJson ? JSON.parse(template.eventsJson) : []
+    previewData.commands = template.commandsJson ? JSON.parse(template.commandsJson) : []
+    previewVisible.value = true
+    return
+  } catch (e) {}
+  // 兜底 mock 数据
   // 模拟预览数据
   if (template.name.includes('温度')) {
     previewData.properties = [
@@ -187,6 +157,10 @@ const handlePreview = (template) => {
   }
   previewVisible.value = true
 }
+
+onMounted(() => {
+  loadTemplates()
+})
 </script>
 
 <style scoped>

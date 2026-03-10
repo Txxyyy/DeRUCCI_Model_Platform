@@ -5,9 +5,12 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:file:./data/user-db;AUTO_SERVER=TRUE
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  h2:
+    console:
+      enabled: true

@@ -40,6 +40,10 @@ public class DeviceService {
         return deviceRepository.findByStatus(status);
     }
 
+    public List<Device> findByDeviceType(String deviceType) {
+        return deviceRepository.findByDeviceType(deviceType);
+    }
+
     @Transactional
     public Device create(Device device) {
         if (deviceRepository.existsByDeviceKey(device.getDeviceKey())) {
@@ -47,6 +51,14 @@ public class DeviceService {
         }
         if (device.getStatus() == null) {
             device.setStatus(DeviceStatus.UNACTIVE);
+        }
+        String deviceType = device.getDeviceType() == null ? "PRODUCTION" : device.getDeviceType();
+        device.setDeviceType(deviceType);
+        if ("TEST".equals(deviceType) && device.getProductId() != null) {
+            long testCount = deviceRepository.countByProductIdAndDeviceType(device.getProductId(), "TEST");
+            if (testCount >= 10) {
+                throw BusinessException.parameterError("该产品测试设备已达上限（最多10台）");
+            }
         }
         return deviceRepository.save(device);
     }

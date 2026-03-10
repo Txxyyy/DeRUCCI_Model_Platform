@@ -35,12 +35,15 @@ public class DeviceController {
     @GetMapping
     public Result<List<Device>> getAllDevices(
             @RequestParam(required = false) Long productId,
-            @RequestParam(required = false) DeviceStatus status) {
+            @RequestParam(required = false) DeviceStatus status,
+            @RequestParam(required = false) String deviceType) {
         List<Device> devices;
         if (productId != null) {
             devices = deviceService.findByProductId(productId);
         } else if (status != null) {
             devices = deviceService.findByStatus(status);
+        } else if (deviceType != null && !deviceType.isBlank()) {
+            devices = deviceService.findByDeviceType(deviceType);
         } else {
             devices = deviceService.findAll();
         }

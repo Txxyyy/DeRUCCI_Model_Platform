@@ -81,19 +81,19 @@ public class ThingModelPointService {
             }
         }
         
-        // 验证取值范围（数值类型时必填）
-        if (isNumericType(point.getDataType())) {
-            if (point.getRangeJson() == null || point.getRangeJson().isEmpty()) {
-                throw new IllegalArgumentException("数值类型功能点必须设置取值范围");
-            }
-        }
+        // 验证取值范围（数值类型时必填）- 改为可选，允许不填
+        // if (isNumericType(point.getDataType())) {
+        //     if (point.getRangeJson() == null || point.getRangeJson().isEmpty()) {
+        //         throw new IllegalArgumentException("数值类型功能点必须设置取值范围");
+        //     }
+        // }
         
-        // 验证枚举值（enum类型时必填）
-        if ("enum".equals(point.getDataType())) {
-            if (point.getEnumValuesJson() == null || point.getEnumValuesJson().isEmpty()) {
-                throw new IllegalArgumentException("枚举类型功能点必须设置枚举值");
-            }
-        }
+        // 验证枚举值（enum类型时必填）- 改为可选，允许不填
+        // if ("enum".equals(point.getDataType())) {
+        //     if (point.getEnumValuesJson() == null || point.getEnumValuesJson().isEmpty()) {
+        //         throw new IllegalArgumentException("枚举类型功能点必须设置枚举值");
+        //     }
+        // }
         
         // 验证物模型内ID唯一
         if (pointRepository.existsByThingModelIdAndPointId(point.getThingModelId(), point.getPointId())) {

@@ -9,15 +9,20 @@
     <el-card class="filter-card">
       <el-row :gutter="20" align="middle">
         <el-col :span="5">
-          <el-select v-model="filters.productId" placeholder="产品" clearable style="width: 100%">
-            <el-option v-for="p in products" :key="p.id" :label="p.name" :value="p.id" />
+          <el-select v-model="filters.productId" placeholder="按产品筛选" clearable style="width: 100%">
+            <el-option-group
+              v-for="(group, cat) in groupedProducts"
+              :key="cat"
+              :label="cat"
+            >
+              <el-option v-for="p in group" :key="p.id" :label="p.name" :value="p.id" />
+            </el-option-group>
           </el-select>
         </el-col>
         <el-col :span="5">
-          <el-select v-model="filters.status" placeholder="状态" clearable style="width: 100%">
-            <el-option label="全部" value="" />
-            <el-option label="正常" value="NORMAL" />
-            <el-option label="异常" value="ABNORMAL" />
+          <el-select v-model="filters.deviceType" placeholder="设备类型" clearable style="width: 100%">
+            <el-option label="生产设备" value="PRODUCTION" />
+            <el-option label="测试设备" value="TEST" />
           </el-select>
         </el-col>
         <el-col :span="5">
@@ -90,18 +95,19 @@
         :header-cell-style="{ background: 'var(--el-fill-color-light)', color: 'var(--el-text-color-primary)', fontWeight: 600 }"
       >
         <el-table-column type="selection" width="45" />
-        <el-table-column label="设备名称" min-width="180">
+        <el-table-column label="设备名称" min-width="200">
           <template #default="{ row }">
             <div class="device-name" @click="handleViewDetail(row)">
               <el-icon class="device-icon"><Monitor /></el-icon>
               <span>{{ row.name }}</span>
+              <el-tag v-if="row.deviceType === 'TEST'" type="warning" size="small" effect="light" style="margin-left:6px">测试</el-tag>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="productName" label="产品" width="140" />
-        <el-table-column prop="sn" label="SN码" min-width="180">
+        <el-table-column prop="serialNumber" label="SN码" min-width="180">
           <template #default="{ row }">
-            <span class="sn-code">{{ row.sn }}</span>
+            <span class="sn-code">{{ row.serialNumber }}</span>
           </template>
         </el-table-column>
         <el-table-column label="在线状态" width="100">
@@ -165,23 +171,51 @@
     </el-card>
 
     <!-- 注册设备弹窗 -->
-    <el-dialog v-model="dialogVisible" title="注册设备" width="600px">
+    <el-dialog v-model="dialogVisible" title="注册设备" width="680px">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="设备名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入设备名称" />
         </el-form-item>
-        <el-form-item label="SN码" prop="sn">
-          <el-input v-model="form.sn" placeholder="请输入SN码" />
+        <el-form-item label="SN码" prop="serialNumber">
+          <el-input v-model="form.serialNumber" placeholder="请输入SN码" />
         </el-form-item>
-        <el-form-item label="所属产品" prop="productId">
-          <el-select v-model="form.productId" placeholder="请选择产品" style="width: 100%">
-            <el-option v-for="p in products" :key="p.id" :label="p.name" :value="p.id" />
-          </el-select>
+
+        <!-- 品类选择 -->
+        <el-form-item label="产品品类" prop="productId">
+          <div class="category-selector">
+            <el-radio-group v-model="selectedCategory" @change="handleCategoryChange">
+              <el-radio-button value="智能床垫">智能床垫</el-radio-button>
+              <el-radio-button value="电动床">电动床</el-radio-button>
+              <el-radio-button value="智能枕头">智能枕头</el-radio-button>
+            </el-radio-group>
+          </div>
         </el-form-item>
+
+        <!-- 产品卡片列表 -->
+        <el-form-item v-if="selectedCategory" label="选择产品">
+          <div v-if="publishedProducts.length === 0" class="no-products-tip">
+            <el-empty description="该品类暂无产品" :image-size="60" />
+          </div>
+          <div v-else class="product-card-list">
+            <div
+              v-for="p in publishedProducts"
+              :key="p.id"
+              :class="['product-card', form.productId === p.id ? 'selected' : '', p.status === 'DEVELOPING' ? 'developing' : '']"
+              @click="handleProductSelect(p)"
+            >
+              <el-tag v-if="p.status === 'DEVELOPING'" type="warning" size="small" class="dev-badge">开发中</el-tag>
+              <div class="product-card-name">{{ p.name }}</div>
+              <div class="product-card-meta">PID: {{ p.pid || p.code || '-' }}</div>
+              <div class="product-card-meta">协议: {{ p.protocol || p.communicationType || '-' }}</div>
+            </div>
+          </div>
+        </el-form-item>
+
+        <!-- deviceKey -->
         <el-form-item label="设备密钥">
-          <el-input v-model="form.deviceSecret" placeholder="系统自动生成" readonly>
+          <el-input v-model="form.deviceKey" placeholder="选择产品后自动生成，可手动修改">
             <template #append>
-              <el-button @click="generateSecret">生成</el-button>
+              <el-button @click="generateDeviceKey(form.productId ? (publishedProducts.find(p=>p.id===form.productId)?.pid || '') : '')">重新生成</el-button>
             </template>
           </el-input>
         </el-form-item>
@@ -200,13 +234,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, ArrowDown, Plus, Upload, Connection, Remove, Refresh, Delete, Monitor, View, Edit, TurnOff } from '@element-plus/icons-vue'
 import { deviceApi } from '../../api/device'
+import { productApi } from '../../api/product'
 
 const router = useRouter()
 
 // 筛选条件
 const filters = reactive({
   productId: '',
-  status: '',
+  deviceType: '',
   online: '',
   keyword: ''
 })
@@ -220,8 +255,12 @@ const pagination = reactive({
 
 // 数据
 const devices = ref([])
-const products = ref([])
+const allProductsForFilter = ref([])
 const selectedDevices = ref([])
+
+// 弹窗内状态
+const selectedCategory = ref('')
+const publishedProducts = ref([])
 
 // 对话框
 const dialogVisible = ref(false)
@@ -230,16 +269,30 @@ const formRef = ref(null)
 const form = reactive({
   id: null,
   name: '',
-  sn: '',
+  serialNumber: '',
   productId: null,
-  deviceSecret: ''
+  productName: '',
+  thingModelId: null,
+  deviceKey: '',
+  deviceType: 'PRODUCTION'
 })
 
 const rules = {
   name: [{ required: true, message: '请输入设备名称', trigger: 'blur' }],
-  sn: [{ required: true, message: '请输入SN码', trigger: 'blur' }],
+  serialNumber: [{ required: true, message: '请输入SN码', trigger: 'blur' }],
   productId: [{ required: true, message: '请选择产品', trigger: 'change' }]
 }
+
+// 按品类分组的产品（用于筛选区下拉）
+const groupedProducts = computed(() => {
+  const groups = {}
+  for (const p of allProductsForFilter.value) {
+    const cat = p.category || '其他'
+    if (!groups[cat]) groups[cat] = []
+    groups[cat].push(p)
+  }
+  return groups
+})
 
 // 筛选后的设备
 const filteredDevices = computed(() => {
@@ -248,8 +301,8 @@ const filteredDevices = computed(() => {
   if (filters.productId) {
     result = result.filter(d => d.productId === filters.productId)
   }
-  if (filters.status) {
-    result = result.filter(d => d.status === filters.status)
+  if (filters.deviceType) {
+    result = result.filter(d => (d.deviceType || 'PRODUCTION') === filters.deviceType)
   }
   if (filters.online !== '') {
     result = result.filter(d => d.online === filters.online)
@@ -257,8 +310,8 @@ const filteredDevices = computed(() => {
   if (filters.keyword) {
     const kw = filters.keyword.toLowerCase()
     result = result.filter(d =>
-      d.name.toLowerCase().includes(kw) ||
-      d.sn.toLowerCase().includes(kw)
+      (d.name || '').toLowerCase().includes(kw) ||
+      (d.serialNumber || '').toLowerCase().includes(kw)
     )
   }
 
@@ -271,27 +324,61 @@ const fetchData = async () => {
     const res = await deviceApi.getList()
     devices.value = res.data || []
   } catch (e) {
-    devices.value = [
-      { id: 1, name: '卧室床垫-01', productId: 1, productName: '智能床垫', sn: 'SN123456789001', online: true, status: 'NORMAL', firmwareVersion: 'v1.2.3', lastOnlineTime: '2024-01-15 14:30' },
-      { id: 2, name: '卧室床垫-02', productId: 1, productName: '智能床垫', sn: 'SN123456789002', online: false, status: 'NORMAL', firmwareVersion: 'v1.2.3', lastOnlineTime: '2024-01-15 10:20' },
-      { id: 3, name: '客厅沙发-01', productId: 2, productName: '智能沙发', sn: 'SN123456789003', online: true, status: 'ABNORMAL', firmwareVersion: 'v1.1.0', lastOnlineTime: '2024-01-15 14:25' },
-      { id: 4, name: '客房枕头-01', productId: 3, productName: '智能枕头', sn: 'SN123456789004', online: false, status: 'NORMAL', firmwareVersion: 'v1.0.5', lastOnlineTime: '2024-01-14 22:00' }
-    ]
+    devices.value = []
   }
 }
 
 const fetchProducts = async () => {
-  products.value = [
-    { id: 1, name: '智能床垫' },
-    { id: 2, name: '智能沙发' },
-    { id: 3, name: '智能枕头' }
-  ]
+  try {
+    const res = await productApi.getList()
+    allProductsForFilter.value = res.data || []
+  } catch (e) {
+    allProductsForFilter.value = []
+  }
+}
+
+const handleCategoryChange = async (category) => {
+  form.productId = null
+  form.productName = ''
+  form.thingModelId = null
+  form.deviceType = 'PRODUCTION'
+  publishedProducts.value = []
+  if (!category) return
+  try {
+    const res = await productApi.getList({ category })
+    const all = res.data || []
+    // PUBLISHED 排前面，DEVELOPING 排后面
+    publishedProducts.value = [...all].sort((a, b) => {
+      if (a.status === 'PUBLISHED' && b.status !== 'PUBLISHED') return -1
+      if (a.status !== 'PUBLISHED' && b.status === 'PUBLISHED') return 1
+      return 0
+    })
+  } catch (e) {
+    publishedProducts.value = []
+  }
+}
+
+const generateDeviceKey = (pid) => {
+  const prefix = (pid || 'XXXXXX').substring(0, 6).toUpperCase()
+  const hex = Math.random().toString(16).substring(2, 10).toUpperCase()
+  form.deviceKey = `DK_${prefix}_${hex}`
+}
+
+const handleProductSelect = (product) => {
+  form.productId = product.id
+  form.productName = product.name
+  form.thingModelId = product.thingModelId || null
+  form.deviceType = product.status === 'DEVELOPING' ? 'TEST' : 'PRODUCTION'
+  generateDeviceKey(product.pid || product.code || '')
+  if (product.status === 'DEVELOPING') {
+    ElMessage.warning({ message: '已选择开发中产品，此设备将注册为测试设备', duration: 3000 })
+  }
 }
 
 const handleSearch = () => { pagination.page = 1 }
 const handleReset = () => {
   filters.productId = ''
-  filters.status = ''
+  filters.deviceType = ''
   filters.online = ''
   filters.keyword = ''
   pagination.page = 1
@@ -304,17 +391,27 @@ const handleSelectionChange = (selection) => {
 }
 
 const handleAdd = () => {
-  Object.assign(form, { id: null, name: '', sn: '', productId: null, deviceSecret: '' })
+  Object.assign(form, { id: null, name: '', serialNumber: '', productId: null, productName: '', thingModelId: null, deviceKey: '', deviceType: 'PRODUCTION' })
+  selectedCategory.value = ''
+  publishedProducts.value = []
+  generateDeviceKey('')
+  if (formRef.value) formRef.value.resetFields()
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
-  Object.assign(form, { ...row })
+  Object.assign(form, {
+    id: row.id,
+    name: row.name,
+    serialNumber: row.serialNumber,
+    productId: row.productId,
+    productName: row.productName,
+    thingModelId: row.thingModelId,
+    deviceKey: row.deviceKey || ''
+  })
+  selectedCategory.value = ''
+  publishedProducts.value = []
   dialogVisible.value = true
-}
-
-const generateSecret = () => {
-  form.deviceSecret = 'SEC_' + Math.random().toString(36).substring(2, 18).toUpperCase()
 }
 
 const handleSubmit = async () => {
@@ -322,47 +419,72 @@ const handleSubmit = async () => {
   if (!valid) return
 
   submitLoading.value = true
-  setTimeout(() => {
+  try {
     if (!form.id) {
-      form.id = Date.now()
-      devices.value.unshift({
-        ...form,
-        productName: products.value.find(p => p.id === form.productId)?.name,
-        online: false,
-        status: 'NORMAL',
-        firmwareVersion: 'v1.0.0',
-        lastOnlineTime: '-'
+      await deviceApi.create({
+        name: form.name,
+        serialNumber: form.serialNumber,
+        productId: form.productId,
+        productName: form.productName,
+        thingModelId: form.thingModelId,
+        deviceKey: form.deviceKey,
+        deviceType: form.deviceType
       })
       ElMessage.success('注册成功')
     } else {
-      const idx = devices.value.findIndex(d => d.id === form.id)
-      if (idx !== -1) Object.assign(devices.value[idx], form)
+      await deviceApi.update(form.id, {
+        name: form.name,
+        serialNumber: form.serialNumber,
+        productId: form.productId,
+        productName: form.productName,
+        thingModelId: form.thingModelId,
+        deviceKey: form.deviceKey
+      })
       ElMessage.success('更新成功')
     }
     dialogVisible.value = false
+    fetchData()
+  } catch (e) {
+    ElMessage.error('操作失败')
+  } finally {
     submitLoading.value = false
-  }, 500)
+  }
 }
 
 const handleViewDetail = (row) => {
   router.push({ path: '/devices/monitor', query: { id: row.id } })
 }
 
-const handleOnline = (row) => {
-  row.online = true
-  row.lastOnlineTime = new Date().toLocaleString()
-  ElMessage.success('上线成功')
+const handleOnline = async (row) => {
+  try {
+    await deviceApi.online(row.id)
+    row.online = true
+    row.lastOnlineTime = new Date().toLocaleString()
+    ElMessage.success('上线成功')
+  } catch (e) {
+    ElMessage.error('操作失败')
+  }
 }
 
-const handleOffline = (row) => {
-  row.online = false
-  ElMessage.success('下线成功')
+const handleOffline = async (row) => {
+  try {
+    await deviceApi.offline(row.id)
+    row.online = false
+    ElMessage.success('下线成功')
+  } catch (e) {
+    ElMessage.error('操作失败')
+  }
 }
 
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确定删除设备 ${row.name}?`, '提示', { type: 'warning' })
-  devices.value = devices.value.filter(d => d.id !== row.id)
-  ElMessage.success('删除成功')
+  try {
+    await deviceApi.delete(row.id)
+    devices.value = devices.value.filter(d => d.id !== row.id)
+    ElMessage.success('删除成功')
+  } catch (e) {
+    ElMessage.error('删除失败')
+  }
 }
 
 const handleBatchImport = () => {
@@ -380,7 +502,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 页面容器 - 增加上下边距 */
+/* 页面容器 */
 .device-list {
   padding: 0 24px 24px;
 }
@@ -442,7 +564,6 @@ onMounted(() => {
   padding: 0;
 }
 
-/* 表格样式优化 */
 .table-card :deep(.el-table) {
   --el-table-border-color: var(--el-border-color-lighter);
   --el-table-header-bg-color: var(--el-fill-color-light);
@@ -486,7 +607,7 @@ onMounted(() => {
   color: var(--el-color-primary);
 }
 
-/* SN码 - 等宽字体 */
+/* SN码 */
 .sn-code {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 13px;
@@ -556,6 +677,78 @@ onMounted(() => {
   --el-pagination-hover-color: var(--el-color-primary);
 }
 
+/* 弹窗内品类选择器 */
+.category-selector {
+  width: 100%;
+}
+
+/* 产品卡片列表 */
+.product-card-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.product-card {
+  position: relative;
+  width: calc(33% - 8px);
+  padding: 12px 14px;
+  border: 2px solid var(--el-border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--el-bg-color);
+}
+
+.product-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+}
+
+.product-card.selected {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.product-card.developing {
+  border-color: var(--el-color-warning-light-5);
+}
+
+.product-card.developing:hover {
+  border-color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+}
+
+.product-card.developing.selected {
+  border-color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+}
+
+.dev-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.product-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 4px;
+}
+
+.product-card-meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
+.no-products-tip {
+  width: 100%;
+  padding: 10px 0;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .device-list {
@@ -574,6 +767,10 @@ onMounted(() => {
 
   .action-left, .action-right {
     justify-content: center;
+  }
+
+  .product-card {
+    width: 100%;
   }
 }
 </style>

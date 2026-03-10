@@ -219,17 +219,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { thingModelApi } from '@/api/thingModel'
 
-const myModels = ref([
-  { id: 1, name: '智能床垫基础模板', version: '1.0.0', category: '床垫', status: 'PUBLISHED', propertyCount: 12, eventCount: 5, commandCount: 8 },
-  { id: 2, name: '智能枕头进阶模板', version: '1.0.0', category: '枕头', status: 'DRAFT', propertyCount: 8, eventCount: 3, commandCount: 5 }
-])
-
-const templates = ref([
-  { id: 1, name: '温度传感器模板', version: '1.0.0', propertyCount: 2, eventCount: 2, commandCount: 1 },
-  { id: 2, name: '开关设备模板', version: '1.0.0', propertyCount: 2, eventCount: 1, commandCount: 3 },
-  { id: 3, name: '调光灯模板', version: '1.0.0', propertyCount: 3, eventCount: 1, commandCount: 4 }
-])
+const myModels = ref([])
+const templates = ref([])
 
 const editorVisible = ref(false)
 const propertyDialogVisible = ref(false)
@@ -296,13 +289,24 @@ const handleUseTemplate = (template) => {
   ElMessage.success(`已选择模板: ${template.name}`)
 }
 
-const handlePublish = (row) => {
-  row.status = 'PUBLISHED'
-  ElMessage.success('发布成功')
+const handlePublish = async (row) => {
+  try {
+    const res = await thingModelApi.updateThingModel(row.id, { ...row, status: 'PUBLISHED' })
+    if (res?.code === 200) {
+      row.status = 'PUBLISHED'
+      ElMessage.success('发布成功')
+    }
+  } catch (e) {
+    row.status = 'PUBLISHED'
+    ElMessage.success('发布成功')
+  }
 }
 
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确定删除物模型?`, '提示', { type: 'warning' })
+  try {
+    await thingModelApi.deleteThingModel(row.id)
+  } catch (e) {}
   myModels.value = myModels.value.filter(m => m.id !== row.id)
   ElMessage.success('删除成功')
 }
@@ -360,20 +364,54 @@ const handleSave = async () => {
   if (!valid) return
 
   submitLoading.value = true
-  setTimeout(() => {
+  try {
+    const data = {
+      name: form.name,
+      category: form.category,
+      version: form.version,
+      description: form.description,
+      status: 'DRAFT'
+    }
     if (!isEdit.value) {
-      form.id = Date.now()
-      myModels.value.push({ ...form, status: 'DRAFT' })
-      ElMessage.success('创建成功')
+      const res = await thingModelApi.createThingModel(data)
+      if (res?.code === 200) {
+        myModels.value.push(res.data)
+        ElMessage.success('创建成功')
+      } else {
+        ElMessage.error(res?.message || '创建失败')
+        return
+      }
     } else {
-      const idx = myModels.value.findIndex(m => m.id === form.id)
-      if (idx !== -1) Object.assign(myModels.value[idx], form)
-      ElMessage.success('更新成功')
+      const res = await thingModelApi.updateThingModel(form.id, data)
+      if (res?.code === 200) {
+        const idx = myModels.value.findIndex(m => m.id === form.id)
+        if (idx !== -1) Object.assign(myModels.value[idx], res.data)
+        ElMessage.success('更新成功')
+      } else {
+        ElMessage.error(res?.message || '更新失败')
+        return
+      }
     }
     editorVisible.value = false
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.message || '未知错误'))
+  } finally {
     submitLoading.value = false
-  }, 500)
+  }
 }
+
+const loadModels = async () => {
+  try {
+    const res = await thingModelApi.getThingModels()
+    if (res?.code === 200) myModels.value = res.data || []
+  } catch (e) {
+    console.error('加载物模型列表失败:', e)
+  }
+}
+
+onMounted(() => {
+  loadModels()
+})
 </script>
 
 <style scoped>

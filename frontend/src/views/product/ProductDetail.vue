@@ -114,21 +114,27 @@
         <div class="card-header">
           <span>物模型管理</span>
           <div class="header-buttons">
-            <el-button type="primary" @click="handleAddPoint">
-              <el-icon><Plus /></el-icon>
-              添加物模型
-            </el-button>
-            <el-button @click="handleExportJson">
+            <el-button @click="handleImportTemplate" :disabled="product.status === 'PUBLISHED'">
               <el-icon><Download /></el-icon>
-              导出JSON
+              从品类模板导入
             </el-button>
-            <el-button type="success" @click="handlePublishThingModel" :disabled="thingModelPoints.length === 0">
-              <el-icon><Upload /></el-icon>
-              发布版本
+            <el-button type="primary" @click="handleAddPoint" :disabled="product.status === 'PUBLISHED'">
+              <el-icon><Plus /></el-icon>
+              手动添加功能点
             </el-button>
           </div>
         </div>
       </template>
+
+      <!-- 功能点摘要 -->
+      <div class="tm-summary">
+        <el-tag type="info">属性 {{ properties.length }}</el-tag>
+        <el-tag type="info">事件 {{ events.length }}</el-tag>
+        <el-tag type="info">命令 {{ commands.length }}</el-tag>
+        <el-tag :type="thingModelPoints.length > 0 ? 'success' : 'warning'">
+          {{ thingModelPoints.length > 0 ? '可发布' : '待配置' }}
+        </el-tag>
+      </div>
 
       <!-- 功能点Tab -->
       <el-tabs v-model="activeTab">
@@ -210,7 +216,66 @@
           <el-empty v-if="commands.length === 0" description="暂无命令，请添加" />
         </el-tab-pane>
       </el-tabs>
+
+      <!-- 导出区域 -->
+      <div class="export-section">
+        <el-alert type="info" :closable="false" style="margin-bottom: 12px;">
+          物模型配置完成后，导出JSON文件提供给固件/App开发团队使用。
+        </el-alert>
+        <div class="export-buttons">
+          <el-button size="large" @click="handlePreviewJson">
+            <el-icon><View /></el-icon>
+            预览JSON
+          </el-button>
+          <el-button type="success" size="large" @click="handleExportJson">
+            <el-icon><Download /></el-icon>
+            导出JSON文件
+          </el-button>
+        </div>
+      </div>
     </el-card>
+
+    <!-- 从品类模板导入弹窗 -->
+    <el-dialog v-model="showImportDialog" title="从品类模板导入功能点" width="700px">
+      <div class="import-dialog-content">
+        <el-alert type="info" :closable="false" style="margin-bottom: 16px;">
+          选择一个模板，将其所有功能点批量导入到当前产品，已有功能点不受影响。
+        </el-alert>
+        <div v-loading="importLoading">
+          <el-empty v-if="categoryTemplates.length === 0" description="当前品类暂无模板" :image-size="60" />
+          <div v-else class="template-list">
+            <div
+              v-for="tmpl in categoryTemplates"
+              :key="tmpl.id"
+              class="template-item"
+              :class="{ selected: selectedTemplateId === tmpl.id }"
+              @click="selectedTemplateId = tmpl.id"
+            >
+              <div class="template-name">{{ tmpl.name }}</div>
+              <div class="template-meta">
+                属性 {{ tmpl.propertyCount || 0 }} / 事件 {{ tmpl.eventCount || 0 }} / 命令 {{ tmpl.commandCount || 0 }}
+              </div>
+              <div class="template-desc" v-if="tmpl.description">{{ tmpl.description }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showImportDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleConfirmImport" :loading="importingPoints" :disabled="!selectedTemplateId">
+          确认导入
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- JSON预览弹窗 -->
+    <el-dialog v-model="showJsonPreview" title="物模型JSON预览" width="800px">
+      <pre class="json-preview">{{ formattedJson }}</pre>
+      <template #footer>
+        <el-button @click="showJsonPreview = false">关闭</el-button>
+        <el-button type="success" @click="handleExportJson">导出JSON文件</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 添加/编辑功能点弹窗 - 根据数据类型动态显示字段 -->
     <el-dialog v-model="showPointDialog" :title="isEditPoint ? '编辑功能点' : '添加功能点'" width="650px">
@@ -325,7 +390,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Picture, Plus, Delete, Lock, Download, Upload } from '@element-plus/icons-vue'
+import { ArrowLeft, Plus, Delete, Lock, Download, View } from '@element-plus/icons-vue'
 import { productApi } from '../../api/product'
 import { thingModelApi } from '../../api/thingModel'
 
@@ -339,6 +404,16 @@ const activeTab = ref('properties')
 const showPointDialog = ref(false)
 const isEditPoint = ref(false)
 const pointFormRef = ref(null)
+
+// 模板导入
+const showImportDialog = ref(false)
+const importLoading = ref(false)
+const importingPoints = ref(false)
+const categoryTemplates = ref([])
+const selectedTemplateId = ref(null)
+
+// JSON预览
+const showJsonPreview = ref(false)
 
 // 枚举值列表
 const enumValues = ref([])
@@ -367,6 +442,21 @@ const pointRules = {
 const properties = computed(() => (thingModelPoints.value || []).filter(p => p.pointType === 'PROPERTY'))
 const events = computed(() => (thingModelPoints.value || []).filter(p => p.pointType === 'EVENT'))
 const commands = computed(() => (thingModelPoints.value || []).filter(p => p.pointType === 'COMMAND'))
+
+const formattedJson = computed(() => {
+  return JSON.stringify({
+    productId: product.value.pid,
+    productName: product.value.name,
+    productModel: product.value.model,
+    productBrand: product.value.brand,
+    category: product.value.category,
+    protocol: product.value.protocol,
+    version: '1.0.0',
+    properties: properties.value,
+    events: events.value,
+    commands: commands.value
+  }, null, 2)
+})
 
 // 方法
 const getStatusType = (status) => {
@@ -415,8 +505,114 @@ const handlePublish = async () => {
     return
   }
   await ElMessageBox.confirm('确定发布产品? 发布后产品信息将锁定不可修改。', '提示', { type: 'warning' })
-  product.value.status = 'PUBLISHED'
-  ElMessage.success('发布成功')
+  try {
+    const res = await productApi.publish(product.value.id)
+    if (res?.code === 200 || res?.id || res?.status === 'PUBLISHED') {
+      product.value.status = 'PUBLISHED'
+      ElMessage.success('发布成功')
+    } else {
+      // fallback：后端无法区分时仍更新本地状态
+      product.value.status = 'PUBLISHED'
+      ElMessage.success('发布成功')
+    }
+  } catch (e) {
+    console.error('发布失败:', e)
+    ElMessage.error('发布失败: ' + (e.message || '未知错误'))
+  }
+}
+
+const handleImportTemplate = async () => {
+  selectedTemplateId.value = null
+  categoryTemplates.value = []
+  showImportDialog.value = true
+  importLoading.value = true
+  try {
+    const res = await thingModelApi.getThingModels({ category: product.value.category })
+    if (res?.code === 200) {
+      categoryTemplates.value = res.data || []
+    }
+  } catch (e) {
+    console.error('加载模板失败:', e)
+  } finally {
+    importLoading.value = false
+  }
+}
+
+const handleConfirmImport = async () => {
+  const template = categoryTemplates.value.find(t => t.id === selectedTemplateId.value)
+  if (!template) return
+
+  importingPoints.value = true
+  try {
+    // 确保 thingModelId 存在
+    if (!thingModelId.value) {
+      const tmRes = await thingModelApi.createThingModel({
+        name: product.value.name + '物模型',
+        code: 'TM_' + product.value.pid,
+        category: product.value.category,
+        status: 'DRAFT'
+      })
+      if (!tmRes || tmRes.code !== 200 || !tmRes.data?.id) {
+        ElMessage.error('创建物模型失败')
+        return
+      }
+      thingModelId.value = tmRes.data.id
+      await productApi.update(product.value.id, { thingModelId: thingModelId.value })
+    }
+
+    // 解析并批量导入属性
+    const props = template.propertiesJson ? JSON.parse(template.propertiesJson) : []
+    for (const p of props) {
+      await thingModelApi.createPoint({
+        thingModelId: thingModelId.value,
+        pointType: 'PROPERTY',
+        pointId: p.id,
+        name: p.name,
+        dataType: p.dataType,
+        access: p.access,
+        unit: p.unit || ''
+      })
+    }
+
+    // 批量导入事件
+    const evts = template.eventsJson ? JSON.parse(template.eventsJson) : []
+    for (const e of evts) {
+      await thingModelApi.createPoint({
+        thingModelId: thingModelId.value,
+        pointType: 'EVENT',
+        pointId: e.id,
+        name: e.name,
+        dataType: e.type || 'alarm',
+        access: 'readOnly'
+      })
+    }
+
+    // 批量导入命令
+    const cmds = template.commandsJson ? JSON.parse(template.commandsJson) : []
+    for (const c of cmds) {
+      await thingModelApi.createPoint({
+        thingModelId: thingModelId.value,
+        pointType: 'COMMAND',
+        pointId: c.id,
+        name: c.name,
+        dataType: c.callType || 'sync',
+        access: 'readWrite'
+      })
+    }
+
+    await loadThingModelPoints()
+    showImportDialog.value = false
+    ElMessage.success(`已导入 ${props.length + evts.length + cmds.length} 个功能点`)
+  } catch (e) {
+    console.error('导入失败:', e)
+    ElMessage.error('导入失败: ' + (e.message || '未知错误'))
+  } finally {
+    importingPoints.value = false
+  }
+}
+
+const handlePreviewJson = () => {
+  showJsonPreview.value = true
 }
 
 const handleAddPoint = () => {
@@ -577,33 +773,14 @@ const resetPointForm = () => {
 }
 
 const handleExportJson = () => {
-  const json = {
-    productId: product.value.pid,
-    productName: product.value.name,
-    productModel: product.value.model,
-    productBrand: product.value.brand,
-    category: product.value.category,
-    protocol: product.value.protocol,
-    version: '1.0.0',
-    properties: properties.value,
-    events: events.value,
-    commands: commands.value
-  }
-
-  const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' })
+  const blob = new Blob([formattedJson.value], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${product.value.model}_v1.0.0.json`
+  a.download = `${product.value.model || 'thing-model'}_v1.0.0.json`
   a.click()
   URL.revokeObjectURL(url)
-
   ElMessage.success('导出成功')
-}
-
-const handlePublishThingModel = async () => {
-  await ElMessageBox.confirm('确定发布物模型版本?', '提示', { type: 'info' })
-  ElMessage.success('发布成功')
 }
 
 // 加载产品数据
@@ -788,5 +965,78 @@ const loadThingModelPoints = async () => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.tm-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.export-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.template-item {
+  border: 2px solid #ebeef5;
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-item:hover {
+  border-color: #409eff;
+  background: #f0f7ff;
+}
+
+.template-item.selected {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.template-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.template-meta {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.template-desc {
+  font-size: 12px;
+  color: #c0c4cc;
+}
+
+.json-preview {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

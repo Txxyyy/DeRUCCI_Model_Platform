@@ -51,6 +51,9 @@ public class Device implements Serializable {
     @Column(columnDefinition = "TEXT")
     private String properties;
 
+    @Column(name = "device_type", length = 20)
+    private String deviceType = "PRODUCTION";  // TEST | PRODUCTION
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createTime;
 
@@ -107,6 +110,9 @@ public class Device implements Serializable {
 
     public String getProperties() { return properties; }
     public void setProperties(String properties) { this.properties = properties; }
+
+    public String getDeviceType() { return deviceType; }
+    public void setDeviceType(String deviceType) { this.deviceType = deviceType; }
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }

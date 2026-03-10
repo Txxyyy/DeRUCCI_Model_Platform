@@ -2,35 +2,36 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Spring%20Boot-3.x-green" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/Vue-3.x-green" alt="Vue 3">
+  <img src="https://img.shields.io/badge/Vue-3.x-brightgreen" alt="Vue 3">
+  <img src="https://img.shields.io/badge/Element%20Plus-2.x-409EFF" alt="Element Plus">
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
 </p>
 
-慕思IoT设备管理平台是一个用于管理智能家居产品（智能床垫、智能枕头等）的物联网设备管理平台，类似于华为DP平台或涂鸦设备开发平台。
+慕思IoT设备管理平台是一个面向智能家居产品（智能床垫、智能枕头、电动床等）的物联网设备管理平台，类似于华为DP平台或涂鸦设备开发平台，支持产品从创建到设备接入的全生命周期管理。
 
 ## 功能特点
 
-- **产品管理** - 创建、管理产品信息，支持分类和版本管理
-- **物模型管理** - 标准物模型（属性+事件+命令），支持模板机制
-- **设备接入** - 设备注册、认证、消息路由，支持多种协议
-- **OTA管理** - 固件版本管理、升级任务、进度监控
+- **产品管理** - 创建、管理产品信息，支持品类分类（智能床垫/电动床/智能枕头）和版本管理，产品状态流转（开发中→已发布）
+- **物模型管理** - 标准物模型（属性 + 事件 + 命令），支持品类标准模板机制，一键导入功能点
+- **设备接入** - 设备注册、关联产品（继承物模型），支持品类+产品二级联动选择器，自动生成设备密钥
+- **OTA管理** - 固件版本管理、升级任务创建与进度监控
+- **仪表盘** - 实时统计已发布产品数、设备总数、在线设备数
 
 ## 技术栈
 
 ### 后端
-- **框架**: Spring Boot 3.x (微服务架构)
-- **服务注册**: Eureka Server
-- **API网关**: Zuul Gateway
-- **配置中心**: Spring Cloud Config
+- **框架**: Spring Boot 3.x（微服务架构，5个独立服务）
+- **持久化**: H2（开发）/ MySQL 8.0（生产），Spring Data JPA
+- **API**: RESTful，Spring MVC
 
 ### 前端
-- **框架**: Vue 3
+- **框架**: Vue 3 (Composition API)
+- **UI组件**: Element Plus 2.x
 - **状态管理**: Pinia
-- **UI组件**: Element Plus
 - **构建工具**: Vite
-- **HTTP客户端**: Axios
+- **HTTP客户端**: Axios（多服务代理）
 
-### 基础设施
+### 基础设施（规划）
 - **数据库**: MySQL + Redis
 - **消息队列**: Kafka/RocketMQ
 - **协议**: MQTT, CoAP, HTTP
@@ -39,29 +40,36 @@
 
 ```
 DeRUCCI_Model_Platform/
-├── backend/                     # Spring Boot后端
-│   ├── common/common-core/       # 公共模块
-│   ├── discovery/eureka-server  # 服务注册 (8761)
-│   ├── config/config-server     # 配置中心 (8888)
-│   ├── gateway/zuul-gateway     # API网关 (8080)
-│   └── service/                 # 业务服务
-│       ├── user-service         # 用户服务 (8081)
-│       ├── product-service      # 产品服务 (8082)
-│       ├── thing-model-service  # 物模型服务 (8083)
-│       ├── device-service       # 设备服务 (8084)
-│       └── ota-service          # OTA服务 (8085)
-├── frontend/                    # Vue 3前端
+├── backend/                         # Spring Boot 微服务后端
+│   ├── common/common-core/          # 公共模块
+│   ├── discovery/eureka-server      # 服务注册 (8761)
+│   ├── config/config-server         # 配置中心 (8888)
+│   ├── gateway/zuul-gateway         # API网关 (8080)
+│   └── service/                     # 业务服务
+│       ├── user-service             # 用户服务 (8081)
+│       ├── product-service          # 产品服务 (8082)
+│       ├── thing-model-service      # 物模型服务 (8083)
+│       ├── device-service           # 设备服务 (8084)
+│       └── ota-service              # OTA服务 (8085)
+├── frontend/                        # Vue 3 前端
 │   └── src/
-│       ├── api/                 # API接口
-│       ├── views/               # 页面组件
-│       ├── router/              # 路由配置
-│       └── stores/              # Pinia状态管理
-└── docs/                        # 项目文档
-    ├── PRD/                     # 产品需求文档
-    ├── API/                     # API接口设计
-    ├── Database/                # 数据库设计
-    ├── UI/                      # UI原型设计
-    └── Architecture/            # 架构设计
+│       ├── api/                     # API接口（按服务拆分）
+│       ├── views/                   # 页面组件
+│       │   ├── Dashboard.vue        # 仪表盘
+│       │   ├── product/             # 产品管理
+│       │   ├── thingmodel/          # 物模型管理
+│       │   ├── device/              # 设备管理
+│       │   └── ota/                 # OTA管理
+│       ├── router/                  # 路由配置
+│       └── stores/                  # Pinia状态管理
+└── docs/                            # 项目文档
+    ├── PRD/                         # 产品需求文档
+    ├── API/                         # API接口设计
+    ├── Database/                    # 数据库设计
+    ├── UI/                          # UI原型设计
+    ├── Architecture/                # 架构设计（含.drawio图表）
+    ├── Design/                      # UI/UX设计规范
+    └── TDD/                         # TDD开发规划
 ```
 
 ## 快速开始
@@ -71,74 +79,69 @@ DeRUCCI_Model_Platform/
 - JDK 17+
 - Maven 3.8+
 - Node.js 18+
-- MySQL 8.0+
-- Redis 7.0+
+
+> 开发环境使用内嵌 H2 数据库，无需安装 MySQL/Redis 即可启动。
 
 ### 后端启动
 
 ```bash
-# 构建后端
-cd backend
-mvn clean install
-
-# 启动服务（按顺序）
-# 1. 启动Eureka Server
-cd discovery/eureka-server
-mvn spring-boot:run
-
-# 2. 启动各个业务服务
-cd service/product-service
-mvn spring-boot:run
+# 启动各业务服务（各服务目录下分别执行）
+cd backend/service/product-service && mvn spring-boot:run      # 端口 8082
+cd backend/service/thing-model-service && mvn spring-boot:run  # 端口 8083
+cd backend/service/device-service && mvn spring-boot:run       # 端口 8084
+cd backend/service/ota-service && mvn spring-boot:run          # 端口 8085
+cd backend/service/user-service && mvn spring-boot:run         # 端口 8081
 ```
 
 ### 前端启动
 
 ```bash
-# 安装依赖
 cd frontend
 npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
+npm run dev   # 访问 http://localhost:3000
 ```
+
+前端通过 Vite 代理将 API 请求转发至各后端服务，无需网关即可开发调试。
 
 ## 服务端口
 
-| 服务 | 端口 |
-|-----|------|
-| Eureka Server | 8761 |
-| API Gateway | 8080 |
-| Config Server | 8888 |
-| User Service | 8081 |
-| Product Service | 8082 |
-| Thing Model Service | 8083 |
-| Device Service | 8084 |
-| OTA Service | 8085 |
+| 服务 | 端口 | 说明 |
+|-----|------|------|
+| Frontend | 3000 | Vue 3 开发服务器 |
+| User Service | 8081 | 用户管理 |
+| Product Service | 8082 | 产品 + 品类管理 |
+| Thing Model Service | 8083 | 物模型 + 功能点 |
+| Device Service | 8084 | 设备注册与管理 |
+| OTA Service | 8085 | 固件版本 + 升级任务 |
+
+## 已实现功能（MVP）
+
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| 仪表盘 | 已发布产品数、设备总数、在线数统计 | ✅ |
+| 产品管理 | 产品列表（卡片视图）、新建/编辑/删除、状态发布 | ✅ |
+| 产品详情 | 基本信息 + 物模型功能点管理 + 模板导入 + JSON预览 | ✅ |
+| 品类模板 | 品类标准物模型模板展示与一键导入 | ✅ |
+| 物模型 | 功能点CRUD（属性/事件/命令），字段验证 | ✅ |
+| 设备管理 | 设备列表、注册设备（品类→产品二级选择）、详情监控 | ✅ |
+| OTA管理 | 固件版本列表、升级任务列表 | ✅ |
+| 数据持久化 | H2 File模式，重启数据不丢失 | ✅ |
 
 ## 开发规范
 
-本项目遵循以下开发规范：
-
-- **需求开发流程**: 头脑风暴 → PRD完善 → UI/UX设计 → 开发实现 → 测试验证
+- **需求开发流程**: 头脑风暴 → PRD完善 → UI/UX设计 → TDD开发 → 测试验证
 - **TDD开发**: 先写测试，再写实现代码
-- **代码规范**: 遵循Google Java Style Guide 和 ESLint
+- **代码规范**: Google Java Style Guide + ESLint
 
 详细规范见 [CLAUDE.md](CLAUDE.md)
 
 ## 文档
 
-- [产品需求文档 (PRD)](docs/PRD/DeRUCCI_物模型平台%20PRD_v1.1.md)
+- [产品需求文档 (PRD)](docs/PRD/)
 - [UI设计规范](docs/UI/UI_Design_v1.0.md)
-- [API接口设计](docs/API/API接口设计_v1.0.md)
-- [数据库设计](docs/Database/数据库设计_v1.0.md)
-- [部署架构设计](docs/Architecture/部署架构设计.md)
-
-## 贡献
-
-欢迎提交Issue和Pull Request。
+- [API接口设计](docs/API/)
+- [数据库设计](docs/Database/)
+- [架构设计](docs/Architecture/)
 
 ## 许可证
 

@@ -1,5 +1,20 @@
 import api from './index'
 
+export const categoryApi = {
+  getList() {
+    return api.get('/categories')
+  },
+  create(data) {
+    return api.post('/categories', data)
+  },
+  update(id, data) {
+    return api.put(`/categories/${id}`, data)
+  },
+  delete(id) {
+    return api.delete(`/categories/${id}`)
+  }
+}
+
 export const productApi = {
   getList(params) {
     return api.get('/products', { params })
