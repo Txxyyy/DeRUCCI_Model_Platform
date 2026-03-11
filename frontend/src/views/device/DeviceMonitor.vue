@@ -277,7 +277,9 @@ const connectDuration = computed(() => {
 
 const formatTime = (time) => {
   if (!time) return '-'
-  return new Date(time).toLocaleString('zh-CN')
+  const d = new Date(time)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 const formatTimeAgo = (time) => {

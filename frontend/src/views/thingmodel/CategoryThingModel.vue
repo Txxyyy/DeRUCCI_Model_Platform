@@ -290,7 +290,9 @@ const getCategoryName = (value) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
-  return String(dateStr).replace('T', ' ').substring(0, 16)
+  const d = new Date(dateStr)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 const getTemplateCount = (category) => {

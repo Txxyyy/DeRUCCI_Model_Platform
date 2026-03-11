@@ -104,8 +104,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="productName" label="产品" width="140" />
-        <el-table-column prop="serialNumber" label="SN码" min-width="180">
+        <el-table-column prop="productName" label="产品" width="130" />
+        <el-table-column prop="serialNumber" label="SN码" min-width="150">
           <template #default="{ row }">
             <span class="sn-code">{{ row.serialNumber }}</span>
           </template>
@@ -122,8 +122,8 @@
         </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'NORMAL' ? 'success' : 'danger'" size="small" effect="light">
-              {{ row.status === 'NORMAL' ? '正常' : '异常' }}
+            <el-tag :type="row.status === 'ERROR' ? 'danger' : 'success'" size="small" effect="light">
+              {{ row.status === 'ERROR' ? '异常' : '正常' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -132,27 +132,23 @@
             <span class="version-tag">{{ row.firmwareVersion }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="lastOnlineTime" label="最后上线" width="170" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="最后上线" width="180">
+          <template #default="{ row }">{{ formatTime(row.lastOnlineTime) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleViewDetail(row)">
-              <AppIcon name="eye" :size="14" style="margin-right:3px" />详情
-            </el-button>
-            <el-button type="primary" link @click="handleEdit(row)">
-              <AppIcon name="edit" :size="14" style="margin-right:3px" />编辑
-            </el-button>
-            <el-button
-              :type="row.online ? 'warning' : 'success'"
-              link
-              @click="row.online ? handleOffline(row) : handleOnline(row)"
-            >
-              <AppIcon v-if="row.online" name="turn-off" :size="14" style="margin-right:3px" />
-              <AppIcon v-else name="connection" :size="14" style="margin-right:3px" />
-              {{ row.online ? '下线' : '上线' }}
-            </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">
-              <AppIcon name="trash" :size="14" style="margin-right:3px" />删除
-            </el-button>
+            <div class="op-btns">
+              <el-button type="primary" link size="small" @click="handleViewDetail(row)">详情</el-button>
+              <el-divider direction="vertical" />
+              <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-divider direction="vertical" />
+              <el-button :type="row.online ? 'warning' : 'success'" link size="small"
+                @click="row.online ? handleOffline(row) : handleOnline(row)">
+                {{ row.online ? '下线' : '上线' }}
+              </el-button>
+              <el-divider direction="vertical" />
+              <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -237,6 +233,13 @@ import { deviceApi } from '../../api/device'
 import { productApi } from '../../api/product'
 
 const router = useRouter()
+
+const formatTime = (time) => {
+  if (!time) return '-'
+  const d = new Date(time)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 
 // 筛选条件
 const filters = reactive({
@@ -459,7 +462,7 @@ const handleOnline = async (row) => {
   try {
     await deviceApi.online(row.id)
     row.online = true
-    row.lastOnlineTime = new Date().toLocaleString()
+    row.lastOnlineTime = formatTime(new Date())
     ElMessage.success('上线成功')
   } catch (e) {
     ElMessage.error('操作失败')
@@ -467,6 +470,11 @@ const handleOnline = async (row) => {
 }
 
 const handleOffline = async (row) => {
+  await ElMessageBox.confirm(`确定将设备「${row.name}」下线？`, '提示', {
+    type: 'warning',
+    confirmButtonText: '确定下线',
+    cancelButtonText: '取消'
+  })
   try {
     await deviceApi.offline(row.id)
     row.online = false
@@ -512,7 +520,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .page-header h2 {
@@ -524,11 +532,11 @@ onMounted(() => {
 
 /* 筛选卡片 */
 .filter-card {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .filter-card :deep(.el-card__body) {
-  padding: 20px 24px;
+  padding: 12px 16px;
 }
 
 /* 操作栏 */
@@ -536,8 +544,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 16px 20px;
+  margin-bottom: 12px;
+  padding: 10px 16px;
   background: var(--el-bg-color);
   border-radius: 8px;
   border: 1px solid var(--el-border-color-light);
@@ -570,13 +578,13 @@ onMounted(() => {
 }
 
 .table-card :deep(.el-table th.el-table__cell) {
-  padding: 14px 0;
+  padding: 10px 0;
   font-size: 13px;
 }
 
 .table-card :deep(.el-table td.el-table__cell) {
-  padding: 16px 0;
-  font-size: 14px;
+  padding: 10px 0;
+  font-size: 13px;
 }
 
 .table-card :deep(.el-table__row) {
@@ -659,8 +667,14 @@ onMounted(() => {
 }
 
 /* 操作按钮 */
-.el-button + .el-button {
-  margin-left: 4px;
+.op-btns {
+  display: flex;
+  align-items: center;
+}
+
+.op-btns .el-divider--vertical {
+  margin: 0 4px;
+  height: 12px;
 }
 
 /* 分页器 */

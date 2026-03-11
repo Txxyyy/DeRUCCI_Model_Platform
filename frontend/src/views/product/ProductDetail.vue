@@ -60,7 +60,7 @@
             <el-descriptions-item label="状态">
               <el-tag :type="getStatusType(product.status)">{{ getStatusText(product.status) }}</el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="创建时间">{{ product.createTime }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ formatTime(product.createTime) }}</el-descriptions-item>
           </el-descriptions>
         </el-col>
       </el-row>
@@ -506,6 +506,13 @@ const currentPointJson = computed(() => {
   if (pointForm.description) schema.description = pointForm.description
   return JSON.stringify(schema, null, 2)
 })
+
+const formatTime = (time) => {
+  if (!time) return '-'
+  const d = new Date(time)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 
 // 方法
 const getStatusType = (status) => {
