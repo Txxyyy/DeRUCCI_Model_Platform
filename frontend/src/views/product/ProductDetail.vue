@@ -277,7 +277,7 @@
                   <el-radio label="readWrite">可读可写</el-radio>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item label="单位">
+              <el-form-item label="单位" prop="unit">
                 <div class="unit-input-row">
                   <el-input v-model="pointForm.unit" placeholder="如 %、℃、bpm" style="flex: 1" />
                   <div class="unit-presets">
@@ -292,12 +292,20 @@
               </el-form-item>
               <el-form-item label="取值范围">
                 <el-row :gutter="8">
-                  <el-col :span="11"><el-input v-model="pointForm.rangeMin" placeholder="最小值" /></el-col>
+                  <el-col :span="11">
+                    <el-form-item prop="rangeMin" style="margin-bottom:0">
+                      <el-input v-model="pointForm.rangeMin" placeholder="最小值" />
+                    </el-form-item>
+                  </el-col>
                   <el-col :span="2" style="text-align:center; line-height:32px; color:#999">~</el-col>
-                  <el-col :span="11"><el-input v-model="pointForm.rangeMax" placeholder="最大值" /></el-col>
+                  <el-col :span="11">
+                    <el-form-item prop="rangeMax" style="margin-bottom:0">
+                      <el-input v-model="pointForm.rangeMax" placeholder="最大值" />
+                    </el-form-item>
+                  </el-col>
                 </el-row>
               </el-form-item>
-              <el-form-item label="步长">
+              <el-form-item label="步长" prop="step">
                 <el-input v-model="pointForm.step" placeholder="如 1、0.1、0.01" style="width: 180px" />
               </el-form-item>
             </template>
@@ -310,10 +318,10 @@
                   <el-radio label="readWrite">可读可写</el-radio>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item label="true 含义">
+              <el-form-item label="true 含义" prop="trueLabel">
                 <el-input v-model="pointForm.trueLabel" placeholder="如：开、启用、正常" />
               </el-form-item>
-              <el-form-item label="false 含义">
+              <el-form-item label="false 含义" prop="falseLabel">
                 <el-input v-model="pointForm.falseLabel" placeholder="如：关、禁用、异常" />
               </el-form-item>
             </template>
@@ -326,7 +334,7 @@
                   <el-radio label="readWrite">可读可写</el-radio>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item label="最大长度">
+              <el-form-item label="最大长度" prop="maxLength">
                 <el-input-number v-model="pointForm.maxLength" :min="1" :max="10000" />
                 <span style="margin-left: 8px; color: #909399; font-size: 13px">字符</span>
               </el-form-item>
@@ -364,8 +372,8 @@
               </el-alert>
             </template>
 
-            <el-form-item label="描述">
-              <el-input v-model="pointForm.description" type="textarea" :rows="2" placeholder="功能点的业务描述" />
+            <el-form-item label="描述" prop="description">
+              <el-input v-model="pointForm.description" type="textarea" :rows="2" placeholder="功能点的业务描述" maxlength="200" show-word-limit />
             </el-form-item>
           </el-form>
         </div>
@@ -383,7 +391,7 @@
 
       <template #footer>
         <el-button @click="showPointDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSavePoint">确定保存</el-button>
+        <el-button type="primary" @click="handleSavePoint" :loading="savingPoint">确定保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -408,6 +416,7 @@ const activeTab = ref('properties')
 const showPointDialog = ref(false)
 const isEditPoint = ref(false)
 const pointFormRef = ref(null)
+const savingPoint = ref(false)
 
 // 模板导入
 const showImportDialog = ref(false)
@@ -451,9 +460,65 @@ const pointForm = reactive({
 })
 
 const pointRules = {
-  pointId: [{ required: true, message: '请输入标识符', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入功能名称', trigger: 'blur' }],
-  dataType: [{ required: true, message: '请选择数据类型', trigger: 'change' }]
+  pointId: [
+    { required: true, message: '请输入标识符', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度 2-50 字符', trigger: 'blur' },
+    { pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/, message: '以字母开头，仅支持字母、数字和下划线', trigger: 'blur' },
+    { validator: (_, v, cb) => v && (/__/.test(v) || v.endsWith('_')) ? cb(new Error('不允许连续下划线或以下划线结尾')) : cb(), trigger: 'blur' }
+  ],
+  name: [
+    { required: true, message: '请输入功能名称', trigger: 'blur' },
+    { max: 50, message: '不超过50字符', trigger: 'blur' },
+    { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_\-\s]+$/, message: '支持中文、英文、数字、下划线和短横线', trigger: 'blur' }
+  ],
+  dataType: [{ required: true, message: '请选择数据类型', trigger: 'change' }],
+  unit: [
+    { max: 20, message: '单位不超过20字符', trigger: 'blur' },
+    { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9%℃°/²³μ]*$/, message: '单位包含不支持的字符', trigger: 'blur' }
+  ],
+  rangeMin: [
+    { validator: (_, v, cb) => {
+      if (v === '' || v === null || v === undefined) return cb()
+      if (isNaN(Number(v))) return cb(new Error('必须是有效数字'))
+      if (pointForm.dataType === 'int' && !Number.isInteger(Number(v))) return cb(new Error('int 类型必须为整数'))
+      if (pointForm.dataType === 'int' && Number(v) < -2147483648) return cb(new Error('超出 int 最小值'))
+      cb()
+    }, trigger: 'blur' }
+  ],
+  rangeMax: [
+    { validator: (_, v, cb) => {
+      if (v === '' || v === null || v === undefined) return cb()
+      if (isNaN(Number(v))) return cb(new Error('必须是有效数字'))
+      if (pointForm.dataType === 'int' && !Number.isInteger(Number(v))) return cb(new Error('int 类型必须为整数'))
+      if (pointForm.dataType === 'int' && Number(v) > 2147483647) return cb(new Error('超出 int 最大值'))
+      if (pointForm.rangeMin !== '' && !isNaN(Number(pointForm.rangeMin)) && Number(v) <= Number(pointForm.rangeMin)) return cb(new Error('最大值必须大于最小值'))
+      cb()
+    }, trigger: 'blur' }
+  ],
+  step: [
+    { validator: (_, v, cb) => {
+      if (v === '' || v === null || v === undefined) return cb()
+      const n = Number(v)
+      if (isNaN(n) || n <= 0) return cb(new Error('步长必须为正数'))
+      if (pointForm.rangeMin !== '' && pointForm.rangeMax !== '') {
+        const range = Number(pointForm.rangeMax) - Number(pointForm.rangeMin)
+        if (!isNaN(range) && n > range) return cb(new Error('步长不能大于取值范围'))
+      }
+      cb()
+    }, trigger: 'blur' }
+  ],
+  trueLabel: [{ max: 20, message: '不超过20字符', trigger: 'blur' }],
+  falseLabel: [{ max: 20, message: '不超过20字符', trigger: 'blur' }],
+  maxLength: [
+    { validator: (_, v, cb) => {
+      if (v === null || v === undefined) return cb()
+      if (v < 1 || v > 10240) return cb(new Error('范围 1-10240'))
+      cb()
+    }, trigger: 'blur' }
+  ],
+  description: [
+    { max: 200, message: '描述不超过200字符', trigger: 'blur' }
+  ]
 }
 
 // 计算属性
@@ -678,15 +743,28 @@ const handleAddPoint = () => {
 }
 
 const handleEditPoint = (row) => {
+  resetPointForm()
   isEditPoint.value = true
-  Object.assign(pointForm, row)
+  // 只拷贝 pointForm 中定义的字段，避免 row 上的额外属性污染 reactive 对象
+  pointForm.id = row.id
+  pointForm.pointId = row.pointId || ''
+  pointForm.name = row.name || ''
+  pointForm.dataType = row.dataType || 'int'
+  pointForm.access = row.access || 'readWrite'
+  pointForm.unit = row.unit || ''
+  pointForm.step = row.step || ''
+  pointForm.maxLength = row.maxLength || null
+  pointForm.defaultValue = row.defaultValue || ''
+  pointForm.trueLabel = row.trueLabel || ''
+  pointForm.falseLabel = row.falseLabel || ''
+  pointForm.description = row.description || ''
 
   // 解析范围
   if (row.rangeJson) {
     try {
       const range = JSON.parse(row.rangeJson)
-      pointForm.rangeMin = range.min
-      pointForm.rangeMax = range.max
+      pointForm.rangeMin = range.min ?? ''
+      pointForm.rangeMax = range.max ?? ''
     } catch {}
   }
 
@@ -741,9 +819,21 @@ const selectDataType = (type) => {
 
 const handleClonePoint = (row) => {
   isEditPoint.value = false
-  Object.assign(pointForm, { ...row, id: null, pointId: row.pointId + '_copy', name: row.name + '（克隆）' })
+  resetPointForm()
+  pointForm.pointId = (row.pointId || '') + '_copy'
+  pointForm.name = (row.name || '') + '（克隆）'
+  pointForm.dataType = row.dataType || 'int'
+  pointForm.access = row.access || 'readWrite'
+  pointForm.unit = row.unit || ''
+  pointForm.step = row.step || ''
+  pointForm.maxLength = row.maxLength || null
+  pointForm.defaultValue = row.defaultValue || ''
+  pointForm.trueLabel = row.trueLabel || ''
+  pointForm.falseLabel = row.falseLabel || ''
+  pointForm.description = row.description || ''
+
   if (row.rangeJson) {
-    try { const r = JSON.parse(row.rangeJson); pointForm.rangeMin = r.min; pointForm.rangeMax = r.max } catch {}
+    try { const r = JSON.parse(row.rangeJson); pointForm.rangeMin = r.min ?? ''; pointForm.rangeMax = r.max ?? '' } catch {}
   }
   enumValues.value = row.enumValuesJson ? (() => { try { return JSON.parse(row.enumValuesJson) } catch { return [] } })() : []
   showPointDialog.value = true
@@ -757,13 +847,107 @@ const removeEnumValue = (index) => {
   enumValues.value.splice(index, 1)
 }
 
+// 输入规范化
+const normalizePointForm = () => {
+  pointForm.pointId = (pointForm.pointId || '').trim().toLowerCase().replace(/\s+/g, '_')
+  pointForm.name = (pointForm.name || '').trim()
+  pointForm.unit = (pointForm.unit || '').trim()
+  pointForm.description = (pointForm.description || '').trim()
+  pointForm.defaultValue = (pointForm.defaultValue || '').trim()
+  pointForm.trueLabel = (pointForm.trueLabel || '').trim()
+  pointForm.falseLabel = (pointForm.falseLabel || '').trim()
+  enumValues.value.forEach(ev => {
+    ev.value = (ev.value || '').trim()
+    ev.description = (ev.description || '').trim()
+  })
+}
+
+// 额外业务校验（el-form rules 无法覆盖的部分）
+const validateBusinessRules = () => {
+  const dt = pointForm.dataType
+  // 单位校验
+  if (pointForm.unit && !/^[\u4e00-\u9fa5a-zA-Z0-9%℃°/²³μ]+$/.test(pointForm.unit)) {
+    ElMessage.warning('单位包含不支持的字符'); return false
+  }
+  if (pointForm.unit && pointForm.unit.length > 20) {
+    ElMessage.warning('单位不超过20字符'); return false
+  }
+  // 取值范围校验
+  if ((dt === 'int' || dt === 'float') && pointForm.rangeMin !== '' && pointForm.rangeMax !== '') {
+    const min = Number(pointForm.rangeMin), max = Number(pointForm.rangeMax)
+    if (isNaN(min) || isNaN(max)) { ElMessage.warning('取值范围必须是有效数字'); return false }
+    if (dt === 'int' && (!Number.isInteger(min) || !Number.isInteger(max))) { ElMessage.warning('int 类型取值范围必须为整数'); return false }
+    if (dt === 'int' && (min < -2147483648 || max > 2147483647)) { ElMessage.warning('int 范围超出 -2147483648 ~ 2147483647'); return false }
+    if (min >= max) { ElMessage.warning('最小值必须小于最大值'); return false }
+    // 步长校验
+    if (pointForm.step !== '' && pointForm.step !== null) {
+      const step = Number(pointForm.step)
+      if (isNaN(step) || step <= 0) { ElMessage.warning('步长必须为正数'); return false }
+      if (step > max - min) { ElMessage.warning('步长不能大于取值范围'); return false }
+    }
+  }
+  // 字符串最大长度
+  if (dt === 'string' && pointForm.maxLength != null) {
+    if (pointForm.maxLength < 1 || pointForm.maxLength > 10240) { ElMessage.warning('最大长度范围 1-10240'); return false }
+  }
+  // 枚举值校验
+  if (dt === 'enum') {
+    const evs = enumValues.value.filter(e => e.value)
+    if (evs.length === 0) { ElMessage.warning('枚举类型至少需要1个枚举值'); return false }
+    if (evs.length > 20) { ElMessage.warning('枚举值最多20个'); return false }
+    for (const ev of evs) {
+      if (!/^[a-zA-Z0-9_]+$/.test(ev.value)) { ElMessage.warning(`枚举值 "${ev.value}" 仅支持字母、数字和下划线`); return false }
+      if (ev.value.length > 30) { ElMessage.warning(`枚举值 "${ev.value}" 不超过30字符`); return false }
+      if (ev.description && ev.description.length > 50) { ElMessage.warning('枚举描述不超过50字符'); return false }
+    }
+    const vals = evs.map(e => e.value)
+    if (new Set(vals).size !== vals.length) { ElMessage.warning('枚举值不可重复'); return false }
+  }
+  // bool标签
+  if (dt === 'bool') {
+    if (pointForm.trueLabel && pointForm.trueLabel.length > 20) { ElMessage.warning('true含义不超过20字符'); return false }
+    if (pointForm.falseLabel && pointForm.falseLabel.length > 20) { ElMessage.warning('false含义不超过20字符'); return false }
+  }
+  // 默认值校验
+  if (pointForm.defaultValue !== '') {
+    const dv = pointForm.defaultValue
+    if (dt === 'int' && !/^-?\d+$/.test(dv)) { ElMessage.warning('默认值必须为整数'); return false }
+    if (dt === 'float' && isNaN(Number(dv))) { ElMessage.warning('默认值必须为数字'); return false }
+    if (dt === 'bool' && dv !== 'true' && dv !== 'false') { ElMessage.warning('默认值必须为 true 或 false'); return false }
+    if (dt === 'enum' && !enumValues.value.some(e => e.value === dv)) { ElMessage.warning('默认值必须是已定义的枚举值之一'); return false }
+    if ((dt === 'int' || dt === 'float') && pointForm.rangeMin !== '' && pointForm.rangeMax !== '') {
+      const n = Number(dv), min = Number(pointForm.rangeMin), max = Number(pointForm.rangeMax)
+      if (!isNaN(n) && !isNaN(min) && !isNaN(max) && (n < min || n > max)) { ElMessage.warning('默认值超出取值范围'); return false }
+    }
+  }
+  return true
+}
+
 const handleSavePoint = async () => {
+  if (savingPoint.value) return
+
+  // 先规范化输入
+  normalizePointForm()
+
   const valid = await pointFormRef.value.validate().catch(() => false)
   if (!valid) return
 
-  // 构建保存数据
+  // 业务规则校验
+  if (!validateBusinessRules()) return
+
+  savingPoint.value = true
+
+  // 构建保存数据 - 只传后端实体需要的字段，避免未知属性导致500
   const saveData = {
-    ...pointForm,
+    id: pointForm.id,
+    pointId: pointForm.pointId,
+    name: pointForm.name,
+    dataType: pointForm.dataType,
+    access: pointForm.access,
+    unit: pointForm.unit,
+    maxLength: pointForm.maxLength,
+    defaultValue: pointForm.defaultValue,
+    description: pointForm.description,
     pointType: activeTab.value === 'properties' ? 'PROPERTY' : activeTab.value === 'events' ? 'EVENT' : 'COMMAND'
   }
 
@@ -831,7 +1015,10 @@ const handleSavePoint = async () => {
     resetPointForm()
   } catch (e) {
     console.error('保存功能点失败:', e)
-    ElMessage.error('保存失败: ' + (e.message || '未知错误'))
+    const msg = e.response?.data?.message || e.message || '未知错误'
+    ElMessage.error('保存失败: ' + msg)
+  } finally {
+    savingPoint.value = false
   }
 }
 

@@ -88,65 +88,69 @@ docs/
     └── TDD开发规划.md     # TDD开发规范和实施计划
 ```
 
-## Development需求开发 Standards
+## Development Standards - 分级开发流程
 
-### 流程 (必须遵循)
+根据需求规模选择对应流程，避免小改动被重流程拖慢。
 
-本项目要求在实现任何新功能之前，必须按照以下完整流程进行：
+### Level 1: 小改动（Bug 修复、样式调整、字段改名）
 
 ```
-需求 → 头脑风暴(Brainstorming) → PRD完善 → UI/UX设计 → 开发实现 → 测试验证
+直接修复 → verification-before-completion
 ```
 
-#### 1. 需求分析阶段 (Brainstorming)
-- **必须使用 skill**: `superpowers:brainstorming`
-- 在开始任何新功能开发前，必须先使用头脑风暴技能评估需求
-- 探索用户意图、需求细节和设计方案
-- 产出: 需求分析报告
+- 不需要设计流程，改完验证即可
+- Bug 优先使用 `systematic-debugging` 技能排查根因
+- 改完用 `simplify` 快速审查代码质量（可选）
 
-#### 2. PRD完善阶段
-- **必须使用 skill**: `skill-create-prd`
-- 根据头脑风暴结果完善产品需求文档
-- 包含: 功能点详细描述、字段定义、验证规则、交互流程、API设计
-- 产出: 更新的PRD文档
+### Level 2: 中等功能（新增弹窗、加筛选器、对接 API）
 
-#### 3. UI/UX设计阶段
-- **必须使用 skill**: `ui-ux-pro-max`
-- 根据PRD设计用户界面
-- 产出: UI原型设计文档
-
-#### 4. 开发实现阶段
-- **必须遵循**: 严格按照PRD和UI设计文档进行开发
-- **必须使用 TDD**: 先写测试，再写实现代码
-
-#### 5. 测试验证阶段
-- 运行测试确保功能正确
-- 对照PRD验证实现完整性
-
-### TDD开发范式
-
-本项目同时采用 **TDD (Test-Driven Development)** 开发范式：
-- 编写测试 → 运行测试失败 → 编写最小代码通过测试 → 重构
-- 详细规范见: `docs/TDD/TDD开发规划.md`
-
-## Quick Start (TDD)
-
-```bash
-# 1. 编写测试 (RED)
-# 在 test/ 目录创建测试文件
-
-# 2. 运行测试确认失败
-./mvnw test -Dtest=ProductServiceTest
-
-# 3. 实现代码 (GREEN)
-# 编写最小代码通过测试
-
-# 4. 运行测试确认通过
-./mvnw test -Dtest=ProductServiceTest
-
-# 5. 重构 (REFACTOR)
-# 清理代码，保持测试通过
 ```
+brainstorming（轻量，理清思路）→ 开发实现 → simplify → verification-before-completion
+```
+
+- 使用 `brainstorming` 技能快速梳理需求和方案
+- 跳过 PRD 和 UI/UX 设计，brainstorming 产出足够指导开发
+- TDD 可选，视复杂度决定
+- 改完用 `simplify` 审查代码复用性和质量
+
+### Level 3: 大功能（新模块、架构变更、跨多服务改动）
+
+```
+brainstorming → skill-create-prd → ui-ux-pro-max → writing-plans → 并行开发 → code-review → verification
+```
+
+- **需求分析**: 使用 `brainstorming` 技能深度探索需求
+- **PRD**: 使用 `skill-create-prd` 输出完整需求文档
+- **UI/UX**: 使用 `ui-ux-pro-max` 设计界面（涉及前端时）
+- **规划**: 使用 `writing-plans` 拆分实施步骤
+- **并行开发**: 使用 `dispatching-parallel-agents` 或 `subagent-driven-development` 并行执行独立任务
+- **审查**: 使用 `requesting-code-review` 检查实现质量
+- **验证**: 使用 `verification-before-completion` 确认通过
+- **提交**: 使用 `create-pr` 创建 Pull Request
+
+### 等级判定标准
+
+| 维度 | L1 小改动 | L2 中等功能 | L3 大功能 |
+|------|----------|------------|----------|
+| 改动文件数 | 1-2 个 | 3-5 个 | 6+ 个 |
+| 是否跨服务 | 否 | 通常不跨 | 跨 2+ 服务 |
+| 是否新增页面/模块 | 否 | 否（在已有页面内改） | 是 |
+| 是否涉及数据库变更 | 否 | 可能加字段 | 新增表/改表结构 |
+| 是否影响已有功能 | 不影响 | 局部影响 | 广泛影响 |
+| 典型场景 | bug 修复、样式调整、文案改动、字段改名 | 新增弹窗/筛选器、对接单个 API、表单增强 | 新模块、架构变更、新服务、跨服务联调 |
+
+**执行方式**: 每次收到需求时：
+1. 快速评估以上维度
+2. 给出等级建议 + 一句话理由
+3. 用户确认后按对应流程执行
+
+### 通用原则
+
+- 流程服务于效率，按需裁剪，不教条执行
+- 截图分析技能（`screenshot-*`）用于逆向还原已有系统，不是常规开发流程
+- `simplify` 每次改完代码建议跑一遍，能抓到冗余和质量问题
+- TDD 适用于后端服务和核心逻辑，前端 UI 调整不强制
+- 详细 TDD 规范见: `docs/TDD/TDD开发规划.md`
 
 ## Current Development Progress
 
