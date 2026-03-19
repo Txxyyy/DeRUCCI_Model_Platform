@@ -52,3 +52,17 @@ temp/
 
 # Preview files
 preview-svg.html
+
+# Ralph agent
+.ralph/
+.ralphrc
+my-project/
+
+# Agent files
+AGENTS.md
+
+# Task plans (temporary)
+task_plan.md
+
+# Tools (deprecated)
+tools/
