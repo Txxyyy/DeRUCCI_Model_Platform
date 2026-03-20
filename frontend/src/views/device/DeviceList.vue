@@ -7,51 +7,44 @@
 
     <!-- 筛选区域 -->
     <el-card class="filter-card">
-      <el-row :gutter="20" align="middle">
-        <el-col :span="5">
-          <el-select v-model="filters.productId" placeholder="按产品筛选" clearable style="width: 100%">
-            <el-option-group
-              v-for="(group, cat) in groupedProducts"
-              :key="cat"
-              :label="cat"
-            >
-              <el-option v-for="p in group" :key="p.id" :label="p.name" :value="p.id" />
-            </el-option-group>
-          </el-select>
-        </el-col>
-        <el-col :span="5">
-          <el-select v-model="filters.deviceType" placeholder="设备类型" clearable style="width: 100%">
-            <el-option label="生产设备" value="PRODUCTION" />
-            <el-option label="测试设备" value="TEST" />
-          </el-select>
-        </el-col>
-        <el-col :span="5">
-          <el-select v-model="filters.online" placeholder="在线状态" clearable style="width: 100%">
-            <el-option label="在线" :value="true" />
-            <el-option label="离线" :value="false" />
-          </el-select>
-        </el-col>
-        <el-col :span="6">
-          <el-input
-            v-model="filters.keyword"
-            placeholder="搜索设备名称/SN码..."
-            clearable
-            @keyup.enter="handleSearch"
+      <div class="filter-row">
+        <el-select v-model="filters.productId" placeholder="按产品筛选" clearable class="filter-select">
+          <el-option-group
+            v-for="(group, cat) in groupedProducts"
+            :key="cat"
+            :label="cat"
           >
-            <template #prefix><AppIcon name="search" :size="15" /></template>
-          </el-input>
-        </el-col>
-        <el-col :span="3">
+            <el-option v-for="p in group" :key="p.id" :label="p.name" :value="p.id" />
+          </el-option-group>
+        </el-select>
+        <el-select v-model="filters.deviceType" placeholder="设备类型" clearable class="filter-select">
+          <el-option label="生产设备" value="PRODUCTION" />
+          <el-option label="测试设备" value="TEST" />
+        </el-select>
+        <el-select v-model="filters.online" placeholder="在线状态" clearable class="filter-select">
+          <el-option label="在线" :value="true" />
+          <el-option label="离线" :value="false" />
+        </el-select>
+        <el-input
+          v-model="filters.keyword"
+          placeholder="搜索设备名称/SN码..."
+          clearable
+          class="filter-input"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix><AppIcon name="search" :size="15" /></template>
+        </el-input>
+        <div class="filter-buttons">
           <el-button @click="handleReset">重置</el-button>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
-        </el-col>
-      </el-row>
+        </div>
+      </div>
     </el-card>
 
     <!-- 操作栏 -->
     <div class="action-bar">
       <div class="action-left">
-        <el-button type="primary" @click="handleAdd">
+        <el-button v-permission="'DEVICE:RW'" type="primary" @click="handleAdd">
           <AppIcon name="plus" :size="15" style="margin-right:4px" />
           注册设备
         </el-button>
@@ -60,9 +53,9 @@
           批量导入
         </el-button>
       </div>
-      <div class="action-right" v-if="selectedDevices.length > 0">
+      <div v-if="selectedDevices.length > 0" class="action-right">
         <span class="selected-count">已选择 {{ selectedDevices.length }} 台设备</span>
-        <el-dropdown @command="handleBatchCommand" trigger="click">
+        <el-dropdown trigger="click" @command="handleBatchCommand">
           <el-button type="primary" plain>
             批量操作<AppIcon name="chevron-down" :size="14" style="margin-left:4px" />
           </el-button>
@@ -90,9 +83,9 @@
     <el-card class="table-card">
       <el-table
         :data="filteredDevices"
-        @selection-change="handleSelectionChange"
         stripe
         :header-cell-style="{ background: 'var(--el-fill-color-light)', color: 'var(--el-text-color-primary)', fontWeight: 600 }"
+        @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="45" />
         <el-table-column label="设备名称" min-width="200">
@@ -140,14 +133,12 @@
             <div class="op-btns">
               <el-button type="primary" link size="small" @click="handleViewDetail(row)">详情</el-button>
               <el-divider direction="vertical" />
-              <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-button v-permission-disabled="'DEVICE:RW'" type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
               <el-divider direction="vertical" />
-              <el-button :type="row.online ? 'warning' : 'success'" link size="small"
-                @click="row.online ? handleOffline(row) : handleOnline(row)">
-                {{ row.online ? '下线' : '上线' }}
-              </el-button>
+              <el-button v-if="row.online" v-permission-disabled="'DEVICE:OFFLINE'" type="warning" link size="small" @click="handleOffline(row)">下线</el-button>
+              <el-button v-else v-permission-disabled="'DEVICE:RW'" type="success" link size="small" @click="handleOnline(row)">上线</el-button>
               <el-divider direction="vertical" />
-              <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button v-permission-disabled="'DEVICE:DELETE'" type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -168,7 +159,7 @@
 
     <!-- 注册设备弹窗 -->
     <el-dialog v-model="dialogVisible" title="注册设备" width="680px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="设备名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入设备名称" />
         </el-form-item>
@@ -193,17 +184,23 @@
             <el-empty description="该品类暂无产品" :image-size="60" />
           </div>
           <div v-else class="product-card-list">
-            <div
+            <el-tooltip
               v-for="p in publishedProducts"
               :key="p.id"
-              :class="['product-card', form.productId === p.id ? 'selected' : '', p.status === 'DEVELOPING' ? 'developing' : '']"
-              @click="handleProductSelect(p)"
+              :content="'请先发布产品'"
+              :disabled="p.status !== 'DEVELOPING'"
+              placement="top"
             >
-              <el-tag v-if="p.status === 'DEVELOPING'" type="warning" size="small" class="dev-badge">开发中</el-tag>
-              <div class="product-card-name">{{ p.name }}</div>
-              <div class="product-card-meta">PID: {{ p.pid || p.code || '-' }}</div>
-              <div class="product-card-meta">协议: {{ p.protocol || p.communicationType || '-' }}</div>
-            </div>
+              <div
+                :class="['product-card', form.productId === p.id ? 'selected' : '', p.status === 'DEVELOPING' ? 'developing disabled' : '']"
+                @click="p.status !== 'DEVELOPING' && handleProductSelect(p)"
+              >
+                <el-tag v-if="p.status === 'DEVELOPING'" type="warning" size="small" class="dev-badge">开发中</el-tag>
+                <div class="product-card-name">{{ p.name }}</div>
+                <div class="product-card-meta">PID: {{ p.pid || p.code || '-' }}</div>
+                <div class="product-card-meta">协议: {{ p.protocol || p.communicationType || '-' }}</div>
+              </div>
+            </el-tooltip>
           </div>
         </el-form-item>
 
@@ -218,7 +215,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -368,14 +365,12 @@ const generateDeviceKey = (pid) => {
 }
 
 const handleProductSelect = (product) => {
+  if (product.status === 'DEVELOPING') return
   form.productId = product.id
   form.productName = product.name
   form.thingModelId = product.thingModelId || null
-  form.deviceType = product.status === 'DEVELOPING' ? 'TEST' : 'PRODUCTION'
+  form.deviceType = 'PRODUCTION'
   generateDeviceKey(product.pid || product.code || '')
-  if (product.status === 'DEVELOPING') {
-    ElMessage.warning({ message: '已选择开发中产品，此设备将注册为测试设备', duration: 3000 })
-  }
 }
 
 const handleSearch = () => { pagination.page = 1 }
@@ -537,6 +532,29 @@ onMounted(() => {
 
 .filter-card :deep(.el-card__body) {
   padding: 12px 16px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.filter-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* 操作栏 */
@@ -726,17 +744,19 @@ onMounted(() => {
 }
 
 .product-card.developing {
-  border-color: var(--el-color-warning-light-5);
+  border-color: var(--el-border-color-lighter);
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .product-card.developing:hover {
-  border-color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
+  border-color: var(--el-border-color-lighter);
+  background: var(--el-bg-color);
 }
 
 .product-card.developing.selected {
-  border-color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
+  border-color: var(--el-border-color-lighter);
+  background: var(--el-bg-color);
 }
 
 .dev-badge {

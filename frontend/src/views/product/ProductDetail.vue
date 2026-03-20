@@ -11,10 +11,10 @@
         <el-tag :type="getStatusType(product.status)">{{ getStatusText(product.status) }}</el-tag>
       </div>
       <div class="header-actions">
-        <el-button @click="handleEdit" v-if="product.status === 'DEVELOPING'">编辑</el-button>
-        <el-button type="primary" @click="handlePublish" v-if="product.status === 'DEVELOPING'">发布</el-button>
-        <el-button type="danger" @click="handleDelete" v-if="product.status === 'DEVELOPING'">删除</el-button>
-        <el-tag type="success" v-if="product.status === 'PUBLISHED'">
+        <el-button v-if="product.status === 'DEVELOPING'" @click="handleEdit">编辑</el-button>
+        <el-button v-if="product.status === 'DEVELOPING'" type="primary" @click="handlePublish">发布</el-button>
+        <el-button v-if="product.status === 'DEVELOPING'" type="danger" @click="handleDelete">删除</el-button>
+        <el-tag v-if="product.status === 'PUBLISHED'" type="success">
           <AppIcon name="lock" :size="12" style="vertical-align:middle;margin-right:3px" /> 已发布锁定
         </el-tag>
       </div>
@@ -72,11 +72,11 @@
         <div class="card-header">
           <span>物模型管理</span>
           <div class="header-buttons">
-            <el-button @click="handleImportTemplate" :disabled="product.status === 'PUBLISHED'">
+            <el-button :disabled="product.status === 'PUBLISHED'" @click="handleImportTemplate">
               <AppIcon name="download" :size="15" style="margin-right:4px" />
               从品类模板导入
             </el-button>
-            <el-button type="primary" @click="handleAddPoint" :disabled="product.status === 'PUBLISHED'">
+            <el-button type="primary" :disabled="product.status === 'PUBLISHED'" @click="handleAddPoint">
               <AppIcon name="plus" :size="15" style="margin-right:4px" />
               手动添加功能点
             </el-button>
@@ -216,14 +216,14 @@
               <div class="template-meta">
                 属性 {{ tmpl.propertyCount || 0 }} / 事件 {{ tmpl.eventCount || 0 }} / 命令 {{ tmpl.commandCount || 0 }}
               </div>
-              <div class="template-desc" v-if="tmpl.description">{{ tmpl.description }}</div>
+              <div v-if="tmpl.description" class="template-desc">{{ tmpl.description }}</div>
             </div>
           </div>
         </div>
       </div>
       <template #footer>
         <el-button @click="showImportDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirmImport" :loading="importingPoints" :disabled="!selectedTemplateId">
+        <el-button type="primary" :loading="importingPoints" :disabled="!selectedTemplateId" @click="handleConfirmImport">
           确认导入
         </el-button>
       </template>
@@ -243,7 +243,7 @@
       <div class="point-dialog-layout">
         <!-- 左侧表单 -->
         <div class="point-form-col">
-          <el-form :model="pointForm" :rules="pointRules" ref="pointFormRef" label-width="100px">
+          <el-form ref="pointFormRef" :model="pointForm" :rules="pointRules" label-width="100px">
             <el-form-item label="标识符" prop="pointId">
               <el-input v-model="pointForm.pointId" placeholder="如 bed_position（英文/下划线）" />
             </el-form-item>
@@ -391,7 +391,7 @@
 
       <template #footer>
         <el-button @click="showPointDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSavePoint" :loading="savingPoint">确定保存</el-button>
+        <el-button type="primary" :loading="savingPoint" @click="handleSavePoint">确定保存</el-button>
       </template>
     </el-dialog>
   </div>

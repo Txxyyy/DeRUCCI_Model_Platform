@@ -8,8 +8,8 @@
     stroke-width="1.5"
     stroke-linecap="round"
     stroke-linejoin="round"
-    v-html="iconPath"
     aria-hidden="true"
+    v-html="iconPath"
   />
 </template>
 

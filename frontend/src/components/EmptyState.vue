@@ -1,8 +1,8 @@
 <template>
   <div class="empty-state">
-    <div class="empty-state-icon" v-if="icon">{{ icon }}</div>
+    <div v-if="icon" class="empty-state-icon">{{ icon }}</div>
     <div class="empty-state-title">{{ title }}</div>
-    <div class="empty-state-desc" v-if="desc">{{ desc }}</div>
+    <div v-if="desc" class="empty-state-desc">{{ desc }}</div>
     <el-button v-if="actionLabel" type="primary" @click="$emit('action')">
       {{ actionLabel }}
     </el-button>

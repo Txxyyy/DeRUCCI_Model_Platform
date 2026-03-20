@@ -31,19 +31,42 @@ public class ProductService {
         this.pidGenerator = pidGenerator;
     }
 
+    /**
+     * 根据ID查询产品
+     *
+     * @param id 产品主键ID
+     * @return 匹配的产品，未找到时返回 empty
+     */
     public Optional<Product> findById(Long id) {
         return productRepository.findById(id);
     }
 
+    /**
+     * 根据PID查询产品
+     *
+     * @param pid 产品PID（如 "PID_A1B2C3"）
+     * @return 匹配的产品，未找到时返回 empty
+     */
     public Optional<Product> findByPid(String pid) {
         return productRepository.findByPid(pid);
     }
 
+    /**
+     * 根据产品编码查询产品（兼容旧接口，实际按PID查询）
+     *
+     * @param code 产品编码（等同于PID）
+     * @return 匹配的产品，未找到时返回 empty
+     */
     public Optional<Product> findByCode(String code) {
         // 兼容旧接口：通过code查询实际使用pid
         return productRepository.findByPid(code);
     }
 
+    /**
+     * 查询全部产品
+     *
+     * @return 所有产品列表
+     */
     public List<Product> findAll() {
         return productRepository.findAll();
     }
@@ -51,15 +74,33 @@ public class ProductService {
     /**
      * 查询产品列表（支持筛选）
      * PRD: 产品列表支持分类、通信方式、状态、名称/型号搜索
+     *
+     * @param category 品类名称，可选
+     * @param protocol 通信协议（MQTT/BLE），可选
+     * @param status   产品状态，可选
+     * @param keyword  搜索关键词，匹配名称或型号，可选
+     * @return 符合条件的产品列表
      */
     public List<Product> list(String category, String protocol, ProductStatus status, String keyword) {
         return productRepository.searchProducts(category, protocol, status, keyword);
     }
 
+    /**
+     * 根据品类查询产品列表
+     *
+     * @param category 品类名称（如 "智能床垫"）
+     * @return 该品类下的产品列表
+     */
     public List<Product> findByCategory(String category) {
         return productRepository.findByCategory(category);
     }
 
+    /**
+     * 根据状态查询产品列表
+     *
+     * @param status 产品状态（DEVELOPING/PUBLISHED/OFFLINE）
+     * @return 该状态下的产品列表
+     */
     public List<Product> findByStatus(ProductStatus status) {
         return productRepository.findByStatus(status);
     }
@@ -73,6 +114,9 @@ public class ProductService {
      * - 产品品类必填
      * - 通信方式只能是MQTT或BLE
      * - 创建后状态为开发中
+     *
+     * @param product 产品信息（名称、型号、品牌、品类、协议等必填）
+     * @return 创建成功的产品（含自动生成的PID，状态为DEVELOPING）
      */
     @Transactional
     public Product create(Product product) {
@@ -110,6 +154,10 @@ public class ProductService {
     /**
      * 更新产品
      * PRD: 只能在开发中状态更新，已发布后锁定
+     *
+     * @param id         产品主键ID
+     * @param updateData 需要更新的字段（仅非null字段会被更新）
+     * @return 更新后的产品信息
      */
     @Transactional
     public Product update(Long id, Product updateData) {
@@ -161,6 +209,8 @@ public class ProductService {
     /**
      * 删除产品
      * PRD: 只能删除开发中状态的产品
+     *
+     * @param id 产品主键ID
      */
     @Transactional
     public void delete(Long id) {
@@ -177,6 +227,9 @@ public class ProductService {
     /**
      * 发布产品
      * PRD: 检查物模型是否已配置
+     *
+     * @param id 产品主键ID
+     * @return 发布后的产品（状态为PUBLISHED）
      */
     @Transactional
     public Product publish(Long id) {
@@ -199,6 +252,9 @@ public class ProductService {
 
     /**
      * 下线产品
+     *
+     * @param id 产品主键ID
+     * @return 下线后的产品（状态为OFFLINE）
      */
     @Transactional
     public Product offline(Long id) {
@@ -210,6 +266,8 @@ public class ProductService {
 
     /**
      * 生成唯一PID
+     *
+     * @return 数据库中不重复的PID字符串
      */
     private String generateUniquePid() {
         String pid;
@@ -221,6 +279,8 @@ public class ProductService {
 
     /**
      * 验证必填字段
+     *
+     * @param product 待验证的产品实体
      */
     private void validateRequiredFields(Product product) {
         if (product.getName() == null || product.getName().trim().isEmpty()) {
@@ -243,6 +303,8 @@ public class ProductService {
     /**
      * 验证产品型号格式
      * 格式: 只能包含英文字母、数字、连字符
+     *
+     * @param model 产品型号字符串
      */
     private void validateModelFormat(String model) {
         if (model != null && !model.matches(MODEL_PATTERN)) {

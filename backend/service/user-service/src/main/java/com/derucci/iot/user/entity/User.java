@@ -64,6 +64,12 @@ public class User implements Serializable {
     private UserStatus status = UserStatus.ENABLED;
 
     /**
+     * 角色：ADMIN / USER
+     */
+    @Column(length = 20)
+    private String role = "USER";
+
+    /**
      * 创建时间
      */
     @Column(nullable = false, updatable = false)
@@ -161,6 +167,14 @@ public class User implements Serializable {
 
     public void setStatus(UserStatus status) {
         this.status = status;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public LocalDateTime getCreateTime() {

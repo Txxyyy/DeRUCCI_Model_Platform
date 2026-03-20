@@ -34,6 +34,9 @@ public class ThingModelPointService {
 
     /**
      * 根据物模型ID获取所有功能点
+     *
+     * @param thingModelId 物模型ID
+     * @return 该物模型下的功能点列表
      */
     public List<ThingModelPoint> findByThingModelId(Long thingModelId) {
         return pointRepository.findByThingModelId(thingModelId);
@@ -41,6 +44,9 @@ public class ThingModelPointService {
 
     /**
      * 根据ID获取功能点
+     *
+     * @param id 功能点ID
+     * @return 功能点Optional，不存在时为空
      */
     public Optional<ThingModelPoint> findById(Long id) {
         return pointRepository.findById(id);
@@ -54,6 +60,9 @@ public class ThingModelPointService {
      * - 属性类型时读写类型必填
      * - 数值类型时取值范围必填
      * - enum类型时枚举值必填
+     *
+     * @param point 功能点数据（需包含thingModelId、pointId、name、pointType、dataType等必填字段）
+     * @return 创建后的功能点（含生成的ID）
      */
     @Transactional
     public ThingModelPoint create(ThingModelPoint point) {
@@ -112,6 +121,10 @@ public class ThingModelPointService {
 
     /**
      * 更新功能点
+     *
+     * @param id 功能点ID
+     * @param updateData 待更新的字段数据（null字段不覆盖）
+     * @return 更新后的功能点
      */
     @Transactional
     public ThingModelPoint update(Long id, ThingModelPoint updateData) {
@@ -150,6 +163,8 @@ public class ThingModelPointService {
 
     /**
      * 删除功能点
+     *
+     * @param id 功能点ID
      */
     @Transactional
     public void delete(Long id) {
@@ -161,6 +176,8 @@ public class ThingModelPointService {
 
     /**
      * 删除物模型的所有功能点
+     *
+     * @param thingModelId 物模型ID
      */
     @Transactional
     public void deleteByThingModelId(Long thingModelId) {
@@ -169,6 +186,8 @@ public class ThingModelPointService {
 
     /**
      * 验证功能点类型
+     *
+     * @param point 待验证的功能点
      */
     private void validatePointType(ThingModelPoint point) {
         if (point.getPointType() == null || point.getPointType().isEmpty()) {
@@ -181,6 +200,8 @@ public class ThingModelPointService {
 
     /**
      * 验证数据类型
+     *
+     * @param point 待验证的功能点
      */
     private void validateDataType(ThingModelPoint point) {
         if (point.getDataType() == null || point.getDataType().isEmpty()) {
@@ -193,6 +214,9 @@ public class ThingModelPointService {
 
     /**
      * 判断是否为数值类型
+     *
+     * @param dataType 数据类型字符串
+     * @return true表示int或float类型
      */
     private boolean isNumericType(String dataType) {
         return "int".equals(dataType) || "float".equals(dataType);
@@ -200,6 +224,8 @@ public class ThingModelPointService {
 
     /**
      * 验证功能点标识符格式
+     *
+     * @param pointId 功能点标识符
      */
     private void validatePointId(String pointId) {
         String trimmed = pointId.trim();
@@ -216,6 +242,8 @@ public class ThingModelPointService {
 
     /**
      * 验证功能名称
+     *
+     * @param name 功能名称
      */
     private void validateName(String name) {
         String trimmed = name.trim();
@@ -226,6 +254,8 @@ public class ThingModelPointService {
 
     /**
      * 验证取值范围JSON
+     *
+     * @param rangeJson 取值范围JSON字符串，需包含min和max字段
      */
     private void validateRange(String rangeJson) {
         try {
@@ -247,6 +277,8 @@ public class ThingModelPointService {
 
     /**
      * 验证枚举值JSON
+     *
+     * @param enumValuesJson 枚举值JSON数组字符串，每项需包含value字段
      */
     private void validateEnumValues(String enumValuesJson) {
         try {

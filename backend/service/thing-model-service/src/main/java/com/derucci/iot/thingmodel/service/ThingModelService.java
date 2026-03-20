@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/** 物模型服务，提供物模型的CRUD、发布和模板应用等核心业务逻辑 */
 @Service
 public class ThingModelService {
 
@@ -34,26 +35,61 @@ public class ThingModelService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 根据ID查询物模型
+     *
+     * @param id 物模型ID
+     * @return 物模型Optional，不存在时为空
+     */
     public Optional<ThingModel> findById(Long id) {
         return thingModelRepository.findById(id);
     }
 
+    /**
+     * 根据编码查询物模型
+     *
+     * @param code 物模型唯一编码
+     * @return 物模型Optional，不存在时为空
+     */
     public Optional<ThingModel> findByCode(String code) {
         return thingModelRepository.findByCode(code);
     }
 
+    /**
+     * 查询所有物模型
+     *
+     * @return 全部物模型列表
+     */
     public List<ThingModel> findAll() {
         return thingModelRepository.findAll();
     }
 
+    /**
+     * 按品类查询物模型列表
+     *
+     * @param category 产品品类名称
+     * @return 该品类下的物模型列表
+     */
     public List<ThingModel> findByCategory(String category) {
         return thingModelRepository.findByCategory(category);
     }
 
+    /**
+     * 按状态查询物模型列表
+     *
+     * @param status 物模型状态（DRAFT/PUBLISHED/DEPRECATED）
+     * @return 该状态下的物模型列表
+     */
     public List<ThingModel> findByStatus(ThingModelStatus status) {
         return thingModelRepository.findByStatus(status);
     }
 
+    /**
+     * 创建物模型，编码不可重复，默认状态为DRAFT
+     *
+     * @param thingModel 物模型数据（code必填且唯一）
+     * @return 创建后的物模型（含生成的ID）
+     */
     @Transactional
     public ThingModel create(ThingModel thingModel) {
         if (thingModelRepository.existsByCode(thingModel.getCode())) {
@@ -65,6 +101,13 @@ public class ThingModelService {
         return thingModelRepository.save(thingModel);
     }
 
+    /**
+     * 更新物模型，仅覆盖非空字段
+     *
+     * @param id 物模型ID
+     * @param updateData 待更新的字段数据（null字段不覆盖）
+     * @return 更新后的物模型
+     */
     @Transactional
     public ThingModel update(Long id, ThingModel updateData) {
         ThingModel thingModel = thingModelRepository.findById(id)
@@ -80,6 +123,11 @@ public class ThingModelService {
         return thingModelRepository.save(thingModel);
     }
 
+    /**
+     * 删除物模型
+     *
+     * @param id 物模型ID
+     */
     @Transactional
     public void delete(Long id) {
         if (!thingModelRepository.existsById(id)) {
@@ -88,6 +136,12 @@ public class ThingModelService {
         thingModelRepository.deleteById(id);
     }
 
+    /**
+     * 发布物模型，状态变更为PUBLISHED
+     *
+     * @param id 物模型ID
+     * @return 发布后的物模型
+     */
     @Transactional
     public ThingModel publish(Long id) {
         ThingModel thingModel = thingModelRepository.findById(id)
@@ -96,6 +150,12 @@ public class ThingModelService {
         return thingModelRepository.save(thingModel);
     }
 
+    /**
+     * 废弃物模型，状态变更为DEPRECATED
+     *
+     * @param id 物模型ID
+     * @return 废弃后的物模型
+     */
     @Transactional
     public ThingModel deprecate(Long id) {
         ThingModel thingModel = thingModelRepository.findById(id)
@@ -107,6 +167,10 @@ public class ThingModelService {
     /**
      * 应用模板
      * PRD: 选择模板后清空当前功能点，添加模板的功能点
+     *
+     * @param thingModelId 目标物模型ID
+     * @param templateId 品类模板ID
+     * @return 应用模板后的物模型
      */
     @Transactional
     public ThingModel applyTemplate(Long thingModelId, Long templateId) {
@@ -163,7 +227,12 @@ public class ThingModelService {
     }
 
     /**
-     * 从Map创建功能点
+     * 从模板JSON的Map数据构建功能点实体
+     *
+     * @param thingModelId 目标物模型ID
+     * @param pointType 功能点类型（PROPERTY/EVENT/COMMAND）
+     * @param data 模板中解析出的功能点键值对
+     * @return 构建好的功能点实体（未持久化）
      */
     private ThingModelPoint createPointFromMap(Long thingModelId, String pointType, Map<String, Object> data) {
         ThingModelPoint point = new ThingModelPoint();

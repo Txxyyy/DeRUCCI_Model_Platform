@@ -2,12 +2,12 @@
   <div class="ota-task-list">
     <!-- 操作栏 -->
     <el-card class="action-card">
-      <el-button type="primary" @click="handleAdd">创建任务</el-button>
+      <el-button v-permission="'OTA:RW'" type="primary" @click="handleAdd">创建任务</el-button>
     </el-card>
 
     <!-- 任务列表 -->
     <el-card>
-      <el-table :data="tasks" stripe v-loading="loading">
+      <el-table v-loading="loading" :data="tasks" stripe>
         <el-table-column prop="name" label="任务名称" min-width="180" />
         <el-table-column prop="targetVersion" label="目标版本" width="120" />
         <el-table-column label="目标设备" width="100">
@@ -35,38 +35,63 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
-            <el-button type="danger" link @click="handleCancel(row)" v-if="row.status === 'RUNNING' || row.status === 'PENDING'">取消</el-button>
+            <el-button v-if="row.status === 'RUNNING' || row.status === 'PENDING'" type="danger" link @click="handleCancel(row)">取消</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
     <!-- 创建任务弹窗 -->
-    <el-dialog v-model="dialogVisible" title="创建升级任务" width="700px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+    <el-dialog v-model="dialogVisible" title="创建升级任务" width="750px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="任务名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入任务名称" />
         </el-form-item>
 
-        <el-divider>选择固件</el-divider>
+        <el-divider>选择产品与固件</el-divider>
+        <el-form-item label="选择产品" prop="productId">
+          <el-select v-model="form.productId" placeholder="请选择产品" style="width: 100%" @change="handleProductChange">
+            <el-option v-for="p in publishedProducts" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="选择固件" prop="firmwareId">
-          <el-select v-model="form.firmwareId" placeholder="请选择固件" style="width: 100%" @change="handleFirmwareChange">
-            <el-option
-              v-for="f in firmwares"
-              :key="f.id"
-              :label="`${getProductName(f.productId)} - ${f.version}`"
-              :value="f.id"
-            />
+          <el-select v-model="form.firmwareId" placeholder="请先选择产品" style="width: 100%" :disabled="!form.productId" @change="handleFirmwareChange">
+            <el-option v-for="f in filteredFirmwares" :key="f.id" :label="f.version" :value="f.id" />
           </el-select>
         </el-form-item>
 
         <el-form-item label="升级说明">
           <el-input v-model="form.description" type="textarea" rows="3" placeholder="请输入升级说明" />
         </el-form-item>
+
+        <el-divider>选择目标设备</el-divider>
+        <el-form-item label="目标设备" prop="deviceIds">
+          <div v-if="!form.productId" class="device-tip">请先选择产品</div>
+          <div v-else-if="productDevices.length === 0" class="device-tip">该产品暂无关联设备</div>
+          <div v-else class="device-select-area">
+            <div class="device-select-header">
+              <el-checkbox v-model="selectAll" @change="handleSelectAll">全选 ({{ productDevices.length }}台)</el-checkbox>
+              <span class="selected-info">已选 {{ form.deviceIds.length }} 台</span>
+            </div>
+            <div class="device-checkbox-list">
+              <el-checkbox-group v-model="form.deviceIds">
+                <div v-for="d in productDevices" :key="d.id" class="device-checkbox-item">
+                  <el-checkbox :value="d.id">
+                    <span class="dev-name">{{ d.name }}</span>
+                    <span class="dev-sn">{{ d.serialNumber || '-' }}</span>
+                    <span class="dev-ver">{{ d.firmwareVersion || '-' }}</span>
+                    <el-tag :type="d.online ? 'success' : 'info'" size="small" effect="light">{{ d.online ? '在线' : '离线' }}</el-tag>
+                  </el-checkbox>
+                </div>
+              </el-checkbox-group>
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">发布任务</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">发布任务</el-button>
       </template>
     </el-dialog>
 
@@ -119,38 +144,51 @@
 
       <template #footer>
         <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button type="danger" @click="handleCancel(currentTask)" v-if="currentTask.status === 'RUNNING' || currentTask.status === 'PENDING'">取消任务</el-button>
+        <el-button v-if="currentTask.status === 'RUNNING' || currentTask.status === 'PENDING'" type="danger" @click="handleCancel(currentTask)">取消任务</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { otaApi } from '@/api/ota'
 import { productApi } from '@/api/product'
+import { deviceApi } from '@/api/device'
 
 const tasks = ref([])
 const firmwares = ref([])
 const products = ref([])
+const productDevices = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref(null)
 const currentTask = ref({})
+const selectAll = ref(false)
+
+const publishedProducts = computed(() => products.value.filter(p => p.status === 'PUBLISHED'))
+const filteredFirmwares = computed(() => {
+  if (!form.productId) return []
+  return firmwares.value.filter(f => f.productId === form.productId)
+})
 
 const form = reactive({
   name: '',
+  productId: null,
   firmwareId: null,
   targetVersion: '',
-  description: ''
+  description: '',
+  deviceIds: []
 })
 
 const rules = {
   name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-  firmwareId: [{ required: true, message: '请选择固件', trigger: 'change' }]
+  productId: [{ required: true, message: '请选择产品', trigger: 'change' }],
+  firmwareId: [{ required: true, message: '请选择固件', trigger: 'change' }],
+  deviceIds: [{ type: 'array', required: true, min: 1, message: '请选择至少一台设备', trigger: 'change' }]
 }
 
 const calcProgress = (row) => {
@@ -169,10 +207,6 @@ const getStatusText = (status) => {
   return map[status] || status
 }
 
-const getProductName = (productId) => {
-  return products.value.find(p => p.id === productId)?.name || '-'
-}
-
 const formatTime = (time) => {
   if (!time) return '-'
   const d = new Date(time)
@@ -183,6 +217,25 @@ const formatTime = (time) => {
 const handleFirmwareChange = (firmwareId) => {
   const fw = firmwares.value.find(f => f.id === firmwareId)
   if (fw) form.targetVersion = fw.version
+}
+
+const handleProductChange = async (productId) => {
+  form.firmwareId = null
+  form.targetVersion = ''
+  form.deviceIds = []
+  selectAll.value = false
+  productDevices.value = []
+  if (!productId) return
+  try {
+    const res = await deviceApi.getList({ productId })
+    productDevices.value = (res?.data || res) || []
+  } catch (e) {
+    productDevices.value = []
+  }
+}
+
+const handleSelectAll = (val) => {
+  form.deviceIds = val ? productDevices.value.map(d => d.id) : []
 }
 
 const loadTasks = async () => {
@@ -216,7 +269,9 @@ const loadProducts = async () => {
 }
 
 const handleAdd = () => {
-  Object.assign(form, { name: '', firmwareId: null, targetVersion: '', description: '' })
+  Object.assign(form, { name: '', productId: null, firmwareId: null, targetVersion: '', description: '', deviceIds: [] })
+  selectAll.value = false
+  productDevices.value = []
   dialogVisible.value = true
 }
 
@@ -229,7 +284,9 @@ const handleSubmit = async () => {
       name: form.name,
       firmwareId: form.firmwareId,
       targetVersion: form.targetVersion,
-      description: form.description
+      description: form.description,
+      deviceIds: form.deviceIds,
+      totalCount: form.deviceIds.length
     })
     if (res?.code === 200) {
       ElMessage.success('任务创建成功')
@@ -300,4 +357,38 @@ onMounted(() => {
 .stat-value.pending { color: #909399; }
 .stat-value.fail { color: #ff4d4f; }
 .stat-label { margin-top: 8px; color: #909399; font-size: 14px; }
+
+.device-tip { color: #909399; font-size: 13px; padding: 8px 0; }
+
+.device-select-area { width: 100%; }
+
+.device-select-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.selected-info { font-size: 13px; color: var(--el-color-primary); }
+
+.device-checkbox-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  padding: 4px 0;
+}
+
+.device-checkbox-item {
+  padding: 6px 12px;
+  transition: background 0.2s;
+}
+
+.device-checkbox-item:hover { background: #f5f7fa; }
+
+.device-checkbox-item .dev-name { font-weight: 500; margin-right: 12px; }
+.device-checkbox-item .dev-sn { color: #909399; font-size: 12px; margin-right: 12px; font-family: monospace; }
+.device-checkbox-item .dev-ver { color: #909399; font-size: 12px; margin-right: 8px; }
 </style>

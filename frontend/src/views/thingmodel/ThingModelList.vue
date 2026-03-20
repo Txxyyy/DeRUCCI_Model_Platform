@@ -34,7 +34,7 @@
             <el-table-column label="操作" width="150">
               <template #default="{ row }">
                 <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-                <el-button type="success" link @click="handlePublish(row)" v-if="row.status === 'DRAFT'">发布</el-button>
+                <el-button v-if="row.status === 'DRAFT'" type="success" link @click="handlePublish(row)">发布</el-button>
                 <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
               </template>
             </el-table-column>
@@ -70,7 +70,7 @@
 
     <!-- 物模型编辑器弹窗 -->
     <el-dialog v-model="editorVisible" :title="isEdit ? '编辑物模型' : '新建物模型'" width="900px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="模型名称" prop="name">
@@ -107,7 +107,7 @@
           <span>属性 (Properties) - 共{{ form.properties.length }}个</span>
           <el-button type="primary" size="small" @click="addProperty">+ 添加属性</el-button>
         </div>
-        <el-table :data="form.properties" border size="small" v-if="form.properties.length > 0">
+        <el-table v-if="form.properties.length > 0" :data="form.properties" border size="small">
           <el-table-column prop="identifier" label="标识符" width="150" />
           <el-table-column prop="name" label="名称" width="120" />
           <el-table-column prop="dataType" label="数据类型" width="100" />
@@ -127,7 +127,7 @@
           <span>事件 (Events) - 共{{ form.events.length }}个</span>
           <el-button type="primary" size="small" @click="addEvent">+ 添加事件</el-button>
         </div>
-        <el-table :data="form.events" border size="small" v-if="form.events.length > 0">
+        <el-table v-if="form.events.length > 0" :data="form.events" border size="small">
           <el-table-column prop="identifier" label="标识符" width="150" />
           <el-table-column prop="name" label="名称" width="120" />
           <el-table-column prop="type" label="类型" width="100" />
@@ -145,7 +145,7 @@
           <span>命令 (Commands) - 共{{ form.commands.length }}个</span>
           <el-button type="primary" size="small" @click="addCommand">+ 添加命令</el-button>
         </div>
-        <el-table :data="form.commands" border size="small" v-if="form.commands.length > 0">
+        <el-table v-if="form.commands.length > 0" :data="form.commands" border size="small">
           <el-table-column prop="identifier" label="标识符" width="150" />
           <el-table-column prop="name" label="名称" width="120" />
           <el-table-column prop="type" label="类型" width="100" />
@@ -160,7 +160,7 @@
 
       <template #footer>
         <el-button @click="editorVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave" :loading="submitLoading">保存</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
 

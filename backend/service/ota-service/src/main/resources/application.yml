@@ -13,3 +13,9 @@ spring:
   h2:
     console:
       enabled: true
+
+jwt:
+  secret: DeRUCCI-IoT-Platform-JWT-Secret-Key-2026
+  whitelist:
+    - /api/auth/**
+    - /h2-console/**

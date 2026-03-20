@@ -4,6 +4,10 @@ import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [vue()],
+  test: {
+    environment: 'jsdom',
+    globals: true
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -12,6 +16,12 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      // 认证接口 → auth-service (8086)
+      '/api/auth': {
+        target: 'http://127.0.0.1:8086',
+        changeOrigin: true,
+        secure: false
+      },
       // 物模型接口 → thing-model-service (8083)
       '/api/thing-models': {
         target: 'http://127.0.0.1:8083',

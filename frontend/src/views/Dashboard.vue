@@ -1,16 +1,29 @@
 <template>
   <div class="dashboard">
+    <!-- Skeleton loading -->
+    <el-row v-if="loading" :gutter="16">
+      <el-col v-for="i in 4" :key="'sk-'+i" :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="skeleton-card stat-card">
+          <div class="skeleton skeleton-circle" style="width:40px;height:40px"></div>
+          <div style="flex:1">
+            <div class="skeleton skeleton-line" style="width:60%;height:24px;margin-bottom:8px"></div>
+            <div class="skeleton skeleton-line" style="width:40%;height:14px"></div>
+          </div>
+        </div>
+      </el-col>
+    </el-row>
+
     <!-- KPI 卡片行 -->
-    <el-row :gutter="16">
-      <el-col :span="6">
-        <div class="stat-card" v-loading="loading" @click="$router.push('/products')">
-          <div class="stat-icon-wrap" style="color: #1E4DA3">
+    <el-row v-else :gutter="16">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card" @click="$router.push('/products')">
+          <div class="stat-icon-wrap stat-icon-primary">
             <AppIcon name="package" :size="22" />
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.publishedCount }}</div>
             <div class="stat-label">已发布产品</div>
-            <div class="stat-trend" v-if="stats.productCount > 0">
+            <div v-if="stats.productCount > 0" class="stat-trend">
               <span class="trend-text">共 {{ stats.productCount }} 个产品</span>
             </div>
           </div>
@@ -21,9 +34,9 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="6">
-        <div class="stat-card" v-loading="loading" @click="$router.push('/devices')">
-          <div class="stat-icon-wrap" style="color: #0EA5E9">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card" @click="$router.push('/devices')">
+          <div class="stat-icon-wrap stat-icon-info">
             <AppIcon name="monitor" :size="22" />
           </div>
           <div class="stat-content">
@@ -40,9 +53,9 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="6">
-        <div class="stat-card" v-loading="loading">
-          <div class="stat-icon-wrap" style="color: #10B981">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div class="stat-icon-wrap stat-icon-success">
             <AppIcon name="connection" :size="22" />
           </div>
           <div class="stat-content">
@@ -59,16 +72,16 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="6">
-        <div class="stat-card" v-loading="loading">
-          <div class="stat-icon-wrap" style="color: #F59E0B">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
+        <div class="stat-card">
+          <div class="stat-icon-wrap stat-icon-warning">
             <AppIcon name="alert-triangle" :size="22" />
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.deviceCount - stats.onlineCount }}</div>
             <div class="stat-label">离线设备</div>
             <div class="stat-trend">
-              <span class="trend-offline" v-if="stats.deviceCount > 0">
+              <span v-if="stats.deviceCount > 0" class="trend-offline">
                 {{ (100 - parseFloat(onlineRate)).toFixed(1) }}% 离线率
               </span>
             </div>
@@ -85,7 +98,7 @@
     <!-- 图表行 -->
     <el-row :gutter="16" style="margin-top: 16px" class="chart-row">
       <!-- 设备状态分布 -->
-      <el-col :span="12" class="chart-col">
+      <el-col :xs="24" :sm="24" :md="12" class="chart-col">
         <el-card class="equal-height-card">
           <template #header>
             <div class="card-header-row">
@@ -104,7 +117,7 @@
               <circle
                 cx="100" cy="100" r="70"
                 fill="none"
-                stroke="#10B981"
+                stroke="var(--color-success)"
                 stroke-width="24"
                 stroke-linecap="round"
                 :stroke-dasharray="`${onlineArc} ${offlineArc}`"
@@ -116,7 +129,7 @@
               <circle
                 cx="100" cy="100" r="70"
                 fill="none"
-                stroke="#EF4444"
+                stroke="var(--color-error)"
                 stroke-width="24"
                 stroke-linecap="round"
                 :stroke-dasharray="`${offlineArc > 4 ? offlineArc - 4 : 0} 999`"
@@ -125,22 +138,22 @@
                 style="transition: all 0.8s ease"
               />
               <!-- 中心文字 -->
-              <text x="100" y="94" text-anchor="middle" font-size="28" font-weight="700" fill="#0F172A" font-family="Inter, sans-serif">{{ onlineRate }}</text>
+              <text x="100" y="94" text-anchor="middle" font-size="28" font-weight="700" fill="var(--color-title)" font-family="Inter, sans-serif">{{ onlineRate }}</text>
               <text x="100" y="115" text-anchor="middle" font-size="12" fill="#9CA3AF">在线率%</text>
             </svg>
             <div class="donut-legend">
               <div class="legend-item">
-                <span class="legend-dot" style="background:#10B981"></span>
+                <span class="legend-dot legend-dot-success"></span>
                 <span class="legend-label">在线</span>
                 <span class="legend-val">{{ stats.onlineCount }}</span>
               </div>
               <div class="legend-item">
-                <span class="legend-dot" style="background:#EF4444"></span>
+                <span class="legend-dot legend-dot-error"></span>
                 <span class="legend-label">离线</span>
                 <span class="legend-val">{{ stats.deviceCount - stats.onlineCount }}</span>
               </div>
               <div class="legend-item">
-                <span class="legend-dot" style="background:#EAECF0"></span>
+                <span class="legend-dot legend-dot-neutral"></span>
                 <span class="legend-label">总计</span>
                 <span class="legend-val">{{ stats.deviceCount }}</span>
               </div>
@@ -150,12 +163,12 @@
       </el-col>
 
       <!-- 最近活动 -->
-      <el-col :span="12" class="chart-col">
+      <el-col :xs="24" :sm="24" :md="12" class="chart-col">
         <el-card class="equal-height-card activity-card">
           <template #header>
             <div class="card-header-row">
               <span class="card-title">最近活动</span>
-              <el-button size="small" text :loading="activityLoading" @click="refreshActivity" title="刷新">
+              <el-button size="small" text :loading="activityLoading" title="刷新" @click="refreshActivity">
                 <AppIcon name="refresh-cw" :size="14" />
               </el-button>
             </div>
@@ -175,7 +188,7 @@
                 </div>
               </el-timeline-item>
             </el-timeline>
-            <el-empty v-else description="暂无活动记录" :image-size="60" />
+            <EmptyState v-else icon="📋" title="暂无活动记录" />
           </div>
         </el-card>
       </el-col>
@@ -188,28 +201,28 @@
           <template #header><span class="card-title">快速入口</span></template>
           <div class="quick-entries">
             <div class="quick-entry" @click="$router.push('/products')">
-              <div class="qe-icon" style="color: #1E4DA3; background: rgba(30,77,163,0.08)">
+              <div class="qe-icon qe-icon-primary">
                 <AppIcon name="package" :size="22" />
               </div>
               <div class="qe-label">产品管理</div>
               <div class="qe-desc">创建和管理产品</div>
             </div>
             <div class="quick-entry" @click="$router.push('/devices')">
-              <div class="qe-icon" style="color: #0EA5E9; background: rgba(14,165,233,0.08)">
+              <div class="qe-icon qe-icon-info">
                 <AppIcon name="monitor" :size="22" />
               </div>
               <div class="qe-label">设备管理</div>
               <div class="qe-desc">注册和监控设备</div>
             </div>
             <div class="quick-entry" @click="$router.push('/products/category-templates')">
-              <div class="qe-icon" style="color: #8B5CF6; background: rgba(139,92,246,0.08)">
+              <div class="qe-icon qe-icon-purple">
                 <AppIcon name="grid" :size="22" />
               </div>
               <div class="qe-label">品类模板</div>
               <div class="qe-desc">标准物模型模板库</div>
             </div>
             <div class="quick-entry" @click="$router.push('/ota/firmware')">
-              <div class="qe-icon" style="color: #F59E0B; background: rgba(245,158,11,0.08)">
+              <div class="qe-icon qe-icon-warning">
                 <AppIcon name="upload" :size="22" />
               </div>
               <div class="qe-label">OTA固件</div>
@@ -225,6 +238,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { productApi } from '@/api/product'
 import { deviceApi } from '@/api/device'
 
@@ -534,11 +548,13 @@ onMounted(() => { loadStats() })
 /* ====== 快速入口 ====== */
 .quick-entries {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
 .quick-entry {
-  flex: 1;
+  min-width: 140px;
+  flex: 1 1 calc(25% - 12px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -577,5 +593,28 @@ onMounted(() => { loadStats() })
 .qe-desc {
   font-size: 12px;
   color: #6B7280;
+}
+
+/* ====== Color utility classes ====== */
+.stat-icon-primary { color: var(--color-primary); }
+.stat-icon-info { color: var(--color-info); }
+.stat-icon-success { color: var(--color-success); }
+.stat-icon-warning { color: var(--color-warning); }
+
+.qe-icon-primary { color: var(--color-primary); background: var(--color-primary-bg); }
+.qe-icon-info { color: var(--color-info); background: rgba(14,165,233,0.08); }
+.qe-icon-purple { color: #8B5CF6; background: rgba(139,92,246,0.08); }
+.qe-icon-warning { color: var(--color-warning); background: rgba(245,158,11,0.08); }
+
+.legend-dot-success { background: var(--color-success); }
+.legend-dot-error { background: var(--color-error); }
+.legend-dot-neutral { background: var(--color-border); }
+
+/* ====== Skeleton loading ====== */
+.skeleton-card { animation: shimmer 1.5s infinite; }
+
+@media (max-width: 768px) {
+  .quick-entries { gap: 8px; }
+  .quick-entry { flex: 1 1 calc(50% - 4px); min-width: 140px; }
 }
 </style>

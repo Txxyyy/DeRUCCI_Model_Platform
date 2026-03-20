@@ -4,6 +4,7 @@ import com.derucci.iot.common.core.exception.BusinessException;
 import com.derucci.iot.user.entity.User;
 import com.derucci.iot.user.entity.UserStatus;
 import com.derucci.iot.user.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -59,6 +61,10 @@ public class UserService {
         if (userRepository.existsByUsername(user.getUsername())) {
             throw BusinessException.parameterError("用户名已存在");
         }
+        // 空字符串邮箱视为null
+        if (user.getEmail() != null && user.getEmail().isBlank()) {
+            user.setEmail(null);
+        }
         // 检查邮箱是否存在
         if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
             throw BusinessException.parameterError("邮箱已被使用");
@@ -66,6 +72,14 @@ public class UserService {
         // 设置默认状态
         if (user.getStatus() == null) {
             user.setStatus(UserStatus.ENABLED);
+        }
+        // 设置默认角色
+        if (user.getRole() == null) {
+            user.setRole("USER");
+        }
+        // 密码BCrypt加密
+        if (user.getPassword() != null && !user.getPassword().startsWith("$2")) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
         return userRepository.save(user);
     }
@@ -93,6 +107,10 @@ public class UserService {
         // 更新头像
         if (updateData.getAvatar() != null) {
             user.setAvatar(updateData.getAvatar());
+        }
+        // 更新角色
+        if (updateData.getRole() != null) {
+            user.setRole(updateData.getRole());
         }
 
         return userRepository.save(user);
@@ -139,12 +157,18 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("用户不存在"));
 
-        // 验证旧密码
-        if (!user.getPassword().equals(oldPassword)) {
+        // 兼容明文和BCrypt密码验证
+        boolean matched;
+        if (user.getPassword().startsWith("$2")) {
+            matched = passwordEncoder.matches(oldPassword, user.getPassword());
+        } else {
+            matched = user.getPassword().equals(oldPassword);
+        }
+        if (!matched) {
             throw BusinessException.parameterError("原密码错误");
         }
 
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
 }

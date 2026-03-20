@@ -21,14 +21,14 @@
           </el-input>
         </el-col>
         <el-col :span="4">
-          <el-button type="primary" @click="handleAdd">上传固件</el-button>
+          <el-button v-permission="'OTA:RW'" type="primary" @click="handleAdd">上传固件</el-button>
         </el-col>
       </el-row>
     </el-card>
 
     <!-- 固件列表 -->
     <el-card>
-      <el-table :data="filteredFirmwares" stripe v-loading="loading">
+      <el-table v-loading="loading" :data="filteredFirmwares" stripe>
         <el-table-column prop="version" label="版本" width="100" />
         <el-table-column label="产品" width="120">
           <template #default="{ row }">
@@ -55,8 +55,8 @@
         <el-table-column prop="description" label="变更说明" min-width="200" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="success" link @click="handlePublish(row)" v-if="row.status === 'DRAFT'">发布</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="row.status === 'DRAFT'" v-permission-disabled="'OTA:RW'" type="success" link @click="handlePublish(row)">发布</el-button>
+            <el-button v-permission-disabled="'OTA:DELETE'" type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -64,7 +64,7 @@
 
     <!-- 上传固件弹窗 -->
     <el-dialog v-model="dialogVisible" title="上传固件" width="600px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="适用产品" prop="productId">
           <el-select v-model="form.productId" placeholder="请选择产品" style="width: 100%">
             <el-option v-for="p in products" :key="p.id" :label="p.name" :value="p.id" />
@@ -97,7 +97,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">上传</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">上传</el-button>
       </template>
     </el-dialog>
   </div>

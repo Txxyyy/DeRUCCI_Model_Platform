@@ -1,7 +1,38 @@
 <template>
   <div class="device-monitor">
+    <!-- SN 搜索栏 -->
+    <div class="sn-search-bar">
+      <el-input
+        v-model="snInput"
+        placeholder="输入设备 SN 码快速定位..."
+        clearable
+        class="sn-input"
+        @keyup.enter="handleSnSearch"
+        @clear="handleSnClear"
+      >
+        <template #prefix>
+          <AppIcon name="search" :size="16" />
+        </template>
+      </el-input>
+      <el-button type="primary" :loading="loading" @click="handleSnSearch">查询</el-button>
+    </div>
+
+    <!-- 空状态：未搜索 -->
+    <div v-if="!deviceLoaded && !notFound" class="empty-state-wrapper">
+      <el-empty description="请输入设备 SN 码或从设备列表进入" :image-size="120">
+        <el-button type="primary" @click="$router.push('/devices')">前往设备列表</el-button>
+      </el-empty>
+    </div>
+
+    <!-- 空状态：未找到 -->
+    <div v-else-if="notFound" class="empty-state-wrapper">
+      <el-empty description="未找到该设备，请确认 SN 码是否正确" :image-size="120" />
+    </div>
+
+    <!-- 设备已加载：完整监控内容 -->
+    <template v-else>
     <!-- 设备头部 -->
-    <div class="device-header" v-loading="loading">
+    <div v-loading="loading" class="device-header">
       <div class="device-header-left">
         <div class="status-indicator" :class="device.status === 'ONLINE' ? 'indicator-online' : 'indicator-offline'">
           <span class="status-pulse-dot"></span>
@@ -13,8 +44,8 @@
             <el-tag size="small" :type="device.status === 'ONLINE' ? 'success' : 'danger'">
               {{ device.status === 'ONLINE' ? '在线' : '离线' }}
             </el-tag>
-            <el-tag size="small" v-if="device.firmwareVersion">固件 {{ device.firmwareVersion }}</el-tag>
-            <span class="last-report-text" v-if="device.lastOnlineTime">
+            <el-tag v-if="device.firmwareVersion" size="small">固件 {{ device.firmwareVersion }}</el-tag>
+            <span v-if="device.lastOnlineTime" class="last-report-text">
               · {{ device.status === 'ONLINE' ? '最近上报' : '断开' }} {{ formatTimeAgo(device.lastOnlineTime) }}
             </span>
           </div>
@@ -32,7 +63,7 @@
 
     <!-- KPI 卡片行 -->
     <el-row :gutter="16" class="kpi-row">
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
         <div class="kpi-card">
           <div class="kpi-icon kpi-blue"><AppIcon name="clock" :size="22" /></div>
           <div class="kpi-content">
@@ -41,7 +72,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
         <div class="kpi-card">
           <div class="kpi-icon kpi-green"><AppIcon name="clock" :size="22" /></div>
           <div class="kpi-content">
@@ -50,7 +81,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
         <div class="kpi-card">
           <div class="kpi-icon kpi-purple"><AppIcon name="cpu" :size="22" /></div>
           <div class="kpi-content">
@@ -59,7 +90,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6">
         <div class="kpi-card">
           <div class="kpi-icon kpi-orange"><AppIcon name="key" :size="22" /></div>
           <div class="kpi-content">
@@ -83,7 +114,7 @@
 
       <div v-if="properties.length > 0">
         <!-- 传感器数据组 -->
-        <div class="prop-group" v-if="sensorProps.length > 0">
+        <div v-if="sensorProps.length > 0" class="prop-group">
           <div class="prop-group-title prop-group-sensor">传感器数据</div>
           <el-row :gutter="12">
             <el-col v-for="prop in sensorProps" :key="prop.identifier" :xs="12" :sm="8" :md="6">
@@ -100,7 +131,7 @@
         </div>
 
         <!-- 控制状态组 -->
-        <div class="prop-group" v-if="controlProps.length > 0">
+        <div v-if="controlProps.length > 0" class="prop-group">
           <div class="prop-group-title prop-group-control">控制状态</div>
           <el-row :gutter="12">
             <el-col v-for="prop in controlProps" :key="prop.identifier" :xs="12" :sm="8" :md="6">
@@ -117,7 +148,7 @@
         </div>
 
         <!-- 其他属性 -->
-        <div class="prop-group" v-if="otherProps.length > 0">
+        <div v-if="otherProps.length > 0" class="prop-group">
           <div class="prop-group-title prop-group-other">其他属性</div>
           <el-row :gutter="12">
             <el-col v-for="prop in otherProps" :key="prop.identifier" :xs="12" :sm="8" :md="6">
@@ -139,7 +170,7 @@
     <!-- 设备信息 + 告警历史 并排 -->
     <el-row :gutter="16" style="margin-top: 16px">
       <!-- 设备详情 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card class="section-card">
           <template #header><span class="card-title">设备详情</span></template>
           <div class="info-list">
@@ -159,7 +190,7 @@
               <span class="info-label">设备 Key</span>
               <span class="info-val font-mono">
                 {{ showSecret ? device.deviceKey : '●●●●●●●●' }}
-                <el-button type="primary" link size="small" @click="showSecret = !showSecret" style="margin-left: 4px">
+                <el-button type="primary" link size="small" style="margin-left: 4px" @click="showSecret = !showSecret">
                   {{ showSecret ? '隐藏' : '查看' }}
                 </el-button>
               </span>
@@ -173,7 +204,7 @@
       </el-col>
 
       <!-- 告警历史 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card class="section-card">
           <template #header>
             <div class="card-header">
@@ -206,6 +237,7 @@
     </el-row>
 
     <!-- 发送命令弹窗 -->
+    </template>
     <el-dialog v-model="commandDialogVisible" title="发送命令" width="500px">
       <el-form :model="commandForm" label-width="100px">
         <el-form-item label="命令标识符">
@@ -217,7 +249,7 @@
       </el-form>
       <template #footer>
         <el-button @click="commandDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmSendCommand" :loading="sending">发送</el-button>
+        <el-button type="primary" :loading="sending" @click="confirmSendCommand">发送</el-button>
       </template>
     </el-dialog>
   </div>
@@ -232,7 +264,11 @@ import { deviceApi } from '@/api/device'
 
 const route = useRoute()
 const router = useRouter()
-const deviceId = route.query.id
+
+const snInput = ref('')
+const notFound = ref(false)
+const deviceLoaded = ref(false)
+let currentDeviceId = null
 
 const loading = ref(false)
 const showSecret = ref(false)
@@ -295,10 +331,10 @@ const formatTimeAgo = (time) => {
 }
 
 const loadDevice = async () => {
-  if (!deviceId) return
+  if (!currentDeviceId) return
   loading.value = true
   try {
-    const res = await deviceApi.getById(deviceId)
+    const res = await deviceApi.getById(currentDeviceId)
     if (res?.code === 200 && res.data) {
       Object.assign(device, res.data)
       if (res.data.properties) {
@@ -315,12 +351,57 @@ const loadDevice = async () => {
           properties.value = []
         }
       }
+      deviceLoaded.value = true
+      notFound.value = false
     }
   } catch (e) {
     console.error('加载设备详情失败:', e)
   } finally {
     loading.value = false
   }
+}
+
+const handleSnSearch = async () => {
+  const sn = snInput.value.trim()
+  if (!sn) return
+  loading.value = true
+  notFound.value = false
+  deviceLoaded.value = false
+  try {
+    const res = await deviceApi.getBySn(sn)
+    if (res?.code === 200 && res.data) {
+      currentDeviceId = res.data.id
+      Object.assign(device, res.data)
+      if (res.data.properties) {
+        try {
+          const parsed = JSON.parse(res.data.properties)
+          if (Array.isArray(parsed)) {
+            properties.value = parsed
+          } else if (typeof parsed === 'object') {
+            properties.value = Object.entries(parsed).map(([k, v]) => ({
+              identifier: k, name: k, value: String(v)
+            }))
+          }
+        } catch {
+          properties.value = []
+        }
+      } else {
+        properties.value = []
+      }
+      deviceLoaded.value = true
+    } else {
+      notFound.value = true
+    }
+  } catch (e) {
+    notFound.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSnClear = () => {
+  notFound.value = false
+  if (!currentDeviceId) deviceLoaded.value = false
 }
 
 const handleSendCommand = () => {
@@ -344,7 +425,7 @@ const handleOta = () => { router.push('/ota/tasks') }
 const handleUnbind = async () => {
   await ElMessageBox.confirm('确定解绑该设备？此操作不可恢复。', '确认解绑', { type: 'warning' })
   try {
-    await deviceApi.delete(deviceId)
+    await deviceApi.delete(currentDeviceId)
     ElMessage.success('设备已解绑')
     router.push('/devices')
   } catch (e) {
@@ -352,7 +433,13 @@ const handleUnbind = async () => {
   }
 }
 
-onMounted(() => { loadDevice() })
+onMounted(() => {
+  const id = route.query.id
+  if (id) {
+    currentDeviceId = id
+    loadDevice()
+  }
+})
 </script>
 
 <style scoped>
@@ -360,6 +447,33 @@ onMounted(() => { loadDevice() })
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+/* ====== SN 搜索栏 ====== */
+.sn-search-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid var(--color-border);
+}
+
+.sn-input {
+  flex: 1;
+  max-width: 480px;
+}
+
+.empty-state-wrapper {
+  background: #fff;
+  border-radius: 12px;
+  padding: 80px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid var(--color-border);
+  text-align: center;
 }
 
 /* ====== 设备头部 ====== */
@@ -372,7 +486,7 @@ onMounted(() => { loadDevice() })
   padding: 20px 24px;
   margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--color-border);
 }
 
 .device-header-left {
@@ -399,11 +513,11 @@ onMounted(() => { loadDevice() })
 }
 
 .indicator-online {
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--color-online-bg);
 }
 
 .indicator-offline {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-offline-bg);
 }
 
 .status-pulse-dot {
@@ -413,13 +527,13 @@ onMounted(() => { loadDevice() })
 }
 
 .indicator-online .status-pulse-dot {
-  background: #10B981;
+  background: var(--color-success);
   box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   animation: pulse-green 2s infinite;
 }
 
 .indicator-offline .status-pulse-dot {
-  background: #EF4444;
+  background: var(--color-error);
 }
 
 @keyframes pulse-green {
@@ -433,7 +547,7 @@ onMounted(() => { loadDevice() })
 .device-name {
   font-size: 20px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--color-title);
   margin: 0 0 6px 0;
 }
 
@@ -446,7 +560,7 @@ onMounted(() => { loadDevice() })
 
 .last-report-text {
   font-size: 13px;
-  color: #909399;
+  color: var(--color-secondary);
 }
 
 /* ====== KPI 卡片行 ====== */
@@ -461,7 +575,7 @@ onMounted(() => { loadDevice() })
   background: #fff;
   border-radius: 12px;
   padding: 16px 20px;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   transition: all 0.2s;
 }
@@ -481,17 +595,17 @@ onMounted(() => { loadDevice() })
   flex-shrink: 0;
 }
 
-.kpi-blue   { background: rgba(30, 77, 163, 0.08); color: #1E4DA3; }
-.kpi-green  { background: rgba(16, 185, 129, 0.08); color: #10B981; }
+.kpi-blue   { background: var(--color-primary-bg); color: var(--color-primary); }
+.kpi-green  { background: var(--color-online-bg); color: var(--color-success); }
 .kpi-purple { background: rgba(139, 92, 246, 0.08); color: #8B5CF6; }
-.kpi-orange { background: rgba(245, 158, 11, 0.08); color: #F59E0B; }
+.kpi-orange { background: rgba(245, 158, 11, 0.08); color: var(--color-warning); }
 
 .kpi-content {}
 
 .kpi-value {
   font-size: 16px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--color-title);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -505,7 +619,7 @@ onMounted(() => { loadDevice() })
 
 .kpi-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-secondary);
   margin-top: 2px;
 }
 
@@ -523,7 +637,7 @@ onMounted(() => { loadDevice() })
 .card-title {
   font-weight: 600;
   font-size: 15px;
-  color: #303133;
+  color: var(--color-body);
 }
 
 .prop-group {
@@ -533,19 +647,19 @@ onMounted(() => { loadDevice() })
 .prop-group-title {
   font-size: 13px;
   font-weight: 600;
-  color: #606266;
+  color: var(--color-body);
   margin-bottom: 10px;
   padding-left: 8px;
-  border-left: 3px solid #8FA3BF;
+  border-left: 3px solid var(--color-secondary);
 }
 
-.prop-group-sensor { border-left-color: #60AEFC; }
-.prop-group-control { border-left-color: #10B981; }
-.prop-group-other   { border-left-color: #8FA3BF; }
+.prop-group-sensor { border-left-color: var(--color-info); }
+.prop-group-control { border-left-color: var(--color-success); }
+.prop-group-other   { border-left-color: var(--color-secondary); }
 
 .prop-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 12px;
@@ -554,7 +668,7 @@ onMounted(() => { loadDevice() })
 }
 
 .prop-card:hover {
-  border-color: #c0c4cc;
+  border-color: var(--color-disabled);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
@@ -565,7 +679,7 @@ onMounted(() => { loadDevice() })
 
 .prop-name {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-secondary);
   margin-bottom: 6px;
 }
 
@@ -579,17 +693,17 @@ onMounted(() => { loadDevice() })
 .prop-value {
   font-size: 24px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--color-title);
 }
 
 .prop-unit {
   font-size: 13px;
-  color: #909399;
+  color: var(--color-secondary);
 }
 
 .prop-id {
   font-size: 11px;
-  color: #c0c4cc;
+  color: var(--color-disabled);
   margin-top: 4px;
   font-family: monospace;
 }
@@ -601,14 +715,14 @@ onMounted(() => { loadDevice() })
   display: flex;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid #f5f7fa;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .info-row:last-child { border-bottom: none; }
 
 .info-label {
   width: 90px;
-  color: #909399;
+  color: var(--color-secondary);
   font-size: 13px;
   flex-shrink: 0;
 }
@@ -616,7 +730,7 @@ onMounted(() => { loadDevice() })
 .info-val {
   flex: 1;
   font-size: 13px;
-  color: #303133;
+  color: var(--color-body);
   display: flex;
   align-items: center;
 }
@@ -637,11 +751,17 @@ onMounted(() => { loadDevice() })
 .alert-title {
   font-weight: 500;
   font-size: 13px;
-  color: #303133;
+  color: var(--color-body);
 }
 
 .alert-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-secondary);
+}
+
+@media (max-width: 768px) {
+  .device-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .device-header-actions { width: 100%; flex-wrap: wrap; }
+  .device-name { font-size: 18px; }
 }
 </style>

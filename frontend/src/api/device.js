@@ -10,6 +10,9 @@ export const deviceApi = {
   getByKey(deviceKey) {
     return api.get(`/devices/key/${deviceKey}`)
   },
+  getBySn(serialNumber) {
+    return api.get(`/devices/sn/${serialNumber}`)
+  },
   create(data) {
     return api.post('/devices', data)
   },

@@ -11,6 +11,16 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
   h2:
     console:
       enabled: true
+
+jwt:
+  secret: DeRUCCI-IoT-Platform-JWT-Secret-Key-2026
+  whitelist:
+    - /api/auth/**
+    - /h2-console/**

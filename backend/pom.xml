@@ -14,7 +14,9 @@
 
     <modules>
         <module>common/common-core</module>
+        <module>common/common-auth</module>
         <module>service/user-service</module>
+        <module>service/auth-service</module>
         <module>service/product-service</module>
         <module>service/thing-model-service</module>
         <module>service/device-service</module>
@@ -74,6 +76,18 @@
                         <release>${java.version}</release>
                         <parameters>true</parameters>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.spotify.fmt</groupId>
+                    <artifactId>fmt-maven-plugin</artifactId>
+                    <version>2.29</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>format</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

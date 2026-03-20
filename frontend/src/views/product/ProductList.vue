@@ -37,7 +37,7 @@
         <el-button @click="handleReset">重置</el-button>
       </div>
       <div class="search-right">
-        <el-button type="primary" @click="handleAdd">
+        <el-button v-permission="'PRODUCT:RW'" type="primary" @click="handleAdd">
           <AppIcon name="plus" :size="15" style="margin-right:4px" />
           添加产品
         </el-button>
@@ -104,7 +104,7 @@
       <el-empty v-if="filteredProducts.length === 0 && !activeCategory && !filters.protocol && !filters.status && !filters.keyword" description="暂无产品" />
 
       <!-- 分页 -->
-      <div class="pagination-wrapper" v-if="filteredProducts.length > 0">
+      <div v-if="filteredProducts.length > 0" class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.page"
           :total="pagination.total"
@@ -117,7 +117,7 @@
 
     <!-- 新增产品弹窗 -->
     <el-dialog v-model="dialogVisible" title="新建产品" width="600px" :close-on-click-modal="false">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-divider>基本信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -158,10 +158,10 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="PID" v-if="form.pid">
+        <el-form-item v-if="form.pid" label="PID">
           <el-input v-model="form.pid" disabled>
             <template #append>
-              <el-button @click="generatePid" title="重新生成PID">
+              <el-button title="重新生成PID" @click="generatePid">
                 <AppIcon name="refresh" :size="14" />
               </el-button>
             </template>
@@ -172,7 +172,7 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">创建</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">创建</el-button>
       </template>
     </el-dialog>
   </div>

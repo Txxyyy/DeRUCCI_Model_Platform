@@ -178,6 +178,26 @@ public class Result<T> implements Serializable {
         return result;
     }
 
+    /**
+     * 未授权响应 (401)
+     */
+    public static <T> Result<T> unauthorized(String message) {
+        Result<T> result = new Result<>();
+        result.code = 401;
+        result.message = message;
+        return result;
+    }
+
+    /**
+     * 无权限响应 (403)
+     */
+    public static <T> Result<T> forbidden(String message) {
+        Result<T> result = new Result<>();
+        result.code = 403;
+        result.message = message;
+        return result;
+    }
+
     // ==================== 状态判断 ====================
 
     /**

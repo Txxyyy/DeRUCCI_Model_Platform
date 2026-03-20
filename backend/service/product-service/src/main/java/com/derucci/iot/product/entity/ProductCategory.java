@@ -4,28 +4,35 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/** 产品品类实体，定义产品的分类信息（如智能床垫、电动床等） */
 @Entity
 @Table(name = "t_product_category")
 public class ProductCategory implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /** 品类主键ID（自增） */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 品类名称（最长100字符，不可为空） */
     @Column(nullable = false, length = 100)
     private String name;
 
+    /** 品类编码（最长50字符，全局唯一） */
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
+    /** 品类描述（最长500字符） */
     @Column(length = 500)
     private String description;
 
+    /** 创建时间（不可更新） */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createTime;
 
+    /** 最后更新时间 */
     @Column(nullable = false)
     private LocalDateTime updateTime;
 

@@ -21,6 +21,8 @@ public class PidGeneratorService {
      * 生成唯一PID
      * 格式: PID_ + 6位大写字母数字
      * 例如: PID_A1B2C3, PID_X9Y8Z7
+     *
+     * @return 随机生成的PID字符串
      */
     public String generate() {
         StringBuilder pid = new StringBuilder(PID_PREFIX);
@@ -32,6 +34,9 @@ public class PidGeneratorService {
 
     /**
      * 验证PID格式是否正确
+     *
+     * @param pid 待验证的PID字符串
+     * @return 格式正确返回 true，null或格式不符返回 false
      */
     public boolean isValidPidFormat(String pid) {
         if (pid == null || !pid.startsWith(PID_PREFIX)) {
