@@ -66,3 +66,6 @@ task_plan.md
 
 # Tools (deprecated)
 tools/
+
+# Git worktrees
+.worktrees/
