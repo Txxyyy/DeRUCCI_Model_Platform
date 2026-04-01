@@ -15,15 +15,12 @@
     <modules>
         <module>common/common-core</module>
         <module>common/common-auth</module>
-        <module>service/user-service</module>
-        <module>service/auth-service</module>
-        <module>service/product-service</module>
-        <module>service/thing-model-service</module>
-        <module>service/device-service</module>
-        <module>service/ota-service</module>
-        <module>gateway/zuul-gateway</module>
-        <module>discovery/eureka-server</module>
-        <module>config/config-server</module>
+        <module>module/module-user</module>
+        <module>module/module-product</module>
+        <module>module/module-thingmodel</module>
+        <module>module/module-device</module>
+        <module>module/module-ota</module>
+        <module>app</module>
     </modules>
 
     <properties>
@@ -32,7 +29,6 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>3.2.5</spring-boot.version>
-        <spring-cloud.version>2023.0.1</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
@@ -45,17 +41,25 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>3.27.7</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>42.7.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>10.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>10.15.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
