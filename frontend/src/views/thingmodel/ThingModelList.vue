@@ -219,7 +219,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { thingModelApi } from '@/api/thingModel'
+import { productThingModelApi } from '@/api/productThingModel'
 
 const myModels = ref([])
 const templates = ref([])
@@ -291,7 +291,7 @@ const handleUseTemplate = (template) => {
 
 const handlePublish = async (row) => {
   try {
-    const res = await thingModelApi.updateThingModel(row.id, { ...row, status: 'PUBLISHED' })
+    const res = await productThingModelApi.updateThingModel(row.id, { ...row, status: 'PUBLISHED' })
     if (res?.code === 200) {
       row.status = 'PUBLISHED'
       ElMessage.success('发布成功')
@@ -305,7 +305,7 @@ const handlePublish = async (row) => {
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确定删除物模型?`, '提示', { type: 'warning' })
   try {
-    await thingModelApi.deleteThingModel(row.id)
+    await productThingModelApi.deleteThingModel(row.id)
   } catch (e) {}
   myModels.value = myModels.value.filter(m => m.id !== row.id)
   ElMessage.success('删除成功')
@@ -373,7 +373,7 @@ const handleSave = async () => {
       status: 'DRAFT'
     }
     if (!isEdit.value) {
-      const res = await thingModelApi.createThingModel(data)
+      const res = await productThingModelApi.createThingModel(data)
       if (res?.code === 200) {
         myModels.value.push(res.data)
         ElMessage.success('创建成功')
@@ -382,7 +382,7 @@ const handleSave = async () => {
         return
       }
     } else {
-      const res = await thingModelApi.updateThingModel(form.id, data)
+      const res = await productThingModelApi.updateThingModel(form.id, data)
       if (res?.code === 200) {
         const idx = myModels.value.findIndex(m => m.id === form.id)
         if (idx !== -1) Object.assign(myModels.value[idx], res.data)
@@ -402,7 +402,7 @@ const handleSave = async () => {
 
 const loadModels = async () => {
   try {
-    const res = await thingModelApi.getThingModels()
+    const res = await productThingModelApi.getThingModels()
     if (res?.code === 200) myModels.value = res.data || []
   } catch (e) {
     console.error('加载物模型列表失败:', e)

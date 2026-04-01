@@ -119,6 +119,9 @@
                 <span v-else-if="row.dataType === 'string'">
                   长度: {{ row.maxLength || '无限制' }}
                 </span>
+                <span v-else-if="row.dataType === 'array'">
+                  元素:{{ row.elementType || '-' }} 长度:{{ row.maxLength || '-' }}
+                </span>
               </template>
             </el-table-column>
             <el-table-column prop="description" label="描述" min-width="150" />
@@ -203,10 +206,10 @@
           选择一个模板，将其所有功能点批量导入到当前产品，已有功能点不受影响。
         </el-alert>
         <div v-loading="importLoading">
-          <el-empty v-if="categoryTemplates.length === 0" description="当前品类暂无模板" :image-size="60" />
+          <el-empty v-if="publishedTemplates.length === 0" description="当前品类暂无已发布的模板" :image-size="60" />
           <div v-else class="template-list">
             <div
-              v-for="tmpl in categoryTemplates"
+              v-for="tmpl in publishedTemplates"
               :key="tmpl.id"
               class="template-item"
               :class="{ selected: selectedTemplateId === tmpl.id }"
@@ -238,162 +241,14 @@
       </template>
     </el-dialog>
 
-    <!-- 添加/编辑功能点弹窗 - 卡片选择 + 实时JSON预览 -->
-    <el-dialog v-model="showPointDialog" :title="isEditPoint ? '编辑功能点' : '添加功能点'" width="940px" class="point-dialog">
-      <div class="point-dialog-layout">
-        <!-- 左侧表单 -->
-        <div class="point-form-col">
-          <el-form ref="pointFormRef" :model="pointForm" :rules="pointRules" label-width="100px">
-            <el-form-item label="标识符" prop="pointId">
-              <el-input v-model="pointForm.pointId" placeholder="如 bed_position（英文/下划线）" />
-            </el-form-item>
-            <el-form-item label="功能名称" prop="name">
-              <el-input v-model="pointForm.name" placeholder="如 睡床位置" />
-            </el-form-item>
-
-            <el-form-item label="数据类型" prop="dataType">
-              <div class="datatype-grid">
-                <div
-                  v-for="dt in dataTypeOptions"
-                  :key="dt.value"
-                  class="datatype-card"
-                  :class="{ 'datatype-active': pointForm.dataType === dt.value }"
-                  @click="selectDataType(dt.value)"
-                >
-                  <span class="dt-icon">{{ dt.icon }}</span>
-                  <div class="dt-info">
-                    <span class="dt-label">{{ dt.label }}</span>
-                    <span class="dt-desc">{{ dt.desc }}</span>
-                  </div>
-                </div>
-              </div>
-            </el-form-item>
-
-            <!-- int/float 类型额外字段 -->
-            <template v-if="pointForm.dataType === 'int' || pointForm.dataType === 'float'">
-              <el-form-item label="读写类型" prop="access">
-                <el-radio-group v-model="pointForm.access">
-                  <el-radio label="readOnly">只读</el-radio>
-                  <el-radio label="readWrite">可读可写</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="单位" prop="unit">
-                <div class="unit-input-row">
-                  <el-input v-model="pointForm.unit" placeholder="如 %、℃、bpm" style="flex: 1" />
-                  <div class="unit-presets">
-                    <el-tag
-                      v-for="u in commonUnits" :key="u"
-                      class="unit-preset-tag"
-                      :class="{ 'unit-active': pointForm.unit === u }"
-                      @click="pointForm.unit = u"
-                    >{{ u }}</el-tag>
-                  </div>
-                </div>
-              </el-form-item>
-              <el-form-item label="取值范围">
-                <el-row :gutter="8">
-                  <el-col :span="11">
-                    <el-form-item prop="rangeMin" style="margin-bottom:0">
-                      <el-input v-model="pointForm.rangeMin" placeholder="最小值" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="2" style="text-align:center; line-height:32px; color:#999">~</el-col>
-                  <el-col :span="11">
-                    <el-form-item prop="rangeMax" style="margin-bottom:0">
-                      <el-input v-model="pointForm.rangeMax" placeholder="最大值" />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-              </el-form-item>
-              <el-form-item label="步长" prop="step">
-                <el-input v-model="pointForm.step" placeholder="如 1、0.1、0.01" style="width: 180px" />
-              </el-form-item>
-            </template>
-
-            <!-- bool 类型额外字段 -->
-            <template v-if="pointForm.dataType === 'bool'">
-              <el-form-item label="读写类型" prop="access">
-                <el-radio-group v-model="pointForm.access">
-                  <el-radio label="readOnly">只读</el-radio>
-                  <el-radio label="readWrite">可读可写</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="true 含义" prop="trueLabel">
-                <el-input v-model="pointForm.trueLabel" placeholder="如：开、启用、正常" />
-              </el-form-item>
-              <el-form-item label="false 含义" prop="falseLabel">
-                <el-input v-model="pointForm.falseLabel" placeholder="如：关、禁用、异常" />
-              </el-form-item>
-            </template>
-
-            <!-- string 类型额外字段 -->
-            <template v-if="pointForm.dataType === 'string'">
-              <el-form-item label="读写类型" prop="access">
-                <el-radio-group v-model="pointForm.access">
-                  <el-radio label="readOnly">只读</el-radio>
-                  <el-radio label="readWrite">可读可写</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="最大长度" prop="maxLength">
-                <el-input-number v-model="pointForm.maxLength" :min="1" :max="10000" />
-                <span style="margin-left: 8px; color: #909399; font-size: 13px">字符</span>
-              </el-form-item>
-            </template>
-
-            <!-- enum 类型额外字段 -->
-            <template v-if="pointForm.dataType === 'enum'">
-              <el-form-item label="读写类型" prop="access">
-                <el-radio-group v-model="pointForm.access">
-                  <el-radio label="readOnly">只读</el-radio>
-                  <el-radio label="readWrite">可读可写</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="枚举值">
-                <div class="enum-list">
-                  <div v-for="(item, index) in enumValues" :key="index" class="enum-item">
-                    <el-input v-model="item.value" placeholder="值（如 0、1）" style="width: 110px;" />
-                    <span style="color:#c0c4cc; margin: 0 4px">→</span>
-                    <el-input v-model="item.description" placeholder="含义（如 关、开）" style="width: 140px;" />
-                    <el-button type="danger" link @click="removeEnumValue(index)">
-                      <AppIcon name="trash" :size="14" />
-                    </el-button>
-                  </div>
-                  <el-button type="primary" link @click="addEnumValue">
-                    <AppIcon name="plus" :size="14" style="margin-right:3px" /> 添加枚举值
-                  </el-button>
-                </div>
-              </el-form-item>
-            </template>
-
-            <!-- struct 类型提示 -->
-            <template v-if="pointForm.dataType === 'struct'">
-              <el-alert type="info" :closable="false" style="margin-bottom: 12px">
-                结构体类型将包含多个子字段，请在保存后通过子字段管理功能配置内部属性。
-              </el-alert>
-            </template>
-
-            <el-form-item label="描述" prop="description">
-              <el-input v-model="pointForm.description" type="textarea" :rows="2" placeholder="功能点的业务描述" maxlength="200" show-word-limit />
-            </el-form-item>
-          </el-form>
-        </div>
-
-        <!-- 右侧实时JSON预览 -->
-        <div class="point-preview-col">
-          <div class="preview-title">
-            <AppIcon name="layers" :size="16" style="margin-right:6px;vertical-align:middle" />
-            实时 JSON Schema
-          </div>
-          <pre class="point-json-preview">{{ currentPointJson }}</pre>
-          <div class="preview-hint">配置实时同步 · 所见即所得</div>
-        </div>
-      </div>
-
-      <template #footer>
-        <el-button @click="showPointDialog = false">取消</el-button>
-        <el-button type="primary" :loading="savingPoint" @click="handleSavePoint">确定保存</el-button>
-      </template>
-    </el-dialog>
+    <!-- 添加/编辑功能点弹窗 -->
+    <PointEditDialog
+      v-model="showPointDialog"
+      :point="editingPoint"
+      :is-edit="isEditPoint"
+      :point-type="activeTab"
+      @save="handlePointSaved"
+    />
   </div>
 </template>
 
@@ -403,8 +258,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@/components/AppIcon.vue'
 import CategoryIcon from '@/components/CategoryIcon.vue'
+import PointEditDialog from '@/components/PointEditDialog.vue'
 import { productApi } from '../../api/product'
-import { thingModelApi } from '../../api/thingModel'
+import { productThingModelApi } from '@/api/productThingModel'
+import { categoryTemplateApi } from '@/api/categoryTemplate'
 
 const router = useRouter()
 const route = useRoute()
@@ -415,8 +272,7 @@ const thingModelPoints = ref([])
 const activeTab = ref('properties')
 const showPointDialog = ref(false)
 const isEditPoint = ref(false)
-const pointFormRef = ref(null)
-const savingPoint = ref(false)
+const editingPoint = ref(null)
 
 // 模板导入
 const showImportDialog = ref(false)
@@ -424,102 +280,10 @@ const importLoading = ref(false)
 const importingPoints = ref(false)
 const categoryTemplates = ref([])
 const selectedTemplateId = ref(null)
+const publishedTemplates = computed(() => categoryTemplates.value.filter(t => t.status === 'PUBLISHED'))
 
 // JSON预览
 const showJsonPreview = ref(false)
-
-// 枚举值列表
-const enumValues = ref([])
-
-const dataTypeOptions = [
-  { value: 'int', icon: '#', label: 'int 整数', desc: '温度、湿度、计数' },
-  { value: 'float', icon: 'π', label: 'float 浮点', desc: '精确数值、坐标' },
-  { value: 'bool', icon: '◉', label: 'bool 布尔', desc: '开关、启停状态' },
-  { value: 'string', icon: 'Aa', label: 'string 字符串', desc: 'IP地址、标签' },
-  { value: 'enum', icon: '≡', label: 'enum 枚举', desc: '模式、档位选择' },
-  { value: 'struct', icon: '{}', label: 'struct 结构体', desc: '复杂嵌套数据' }
-]
-
-const commonUnits = ['℃', '%', 'bpm', 'mm', 'kg', 'lux', 'V', 'mA', 'Hz', 'rpm']
-
-const pointForm = reactive({
-  id: null,
-  pointId: '',
-  name: '',
-  dataType: 'int',
-  access: 'readWrite',
-  unit: '',
-  rangeMin: '',
-  rangeMax: '',
-  step: '',
-  maxLength: null,
-  defaultValue: '',
-  trueLabel: '',
-  falseLabel: '',
-  description: ''
-})
-
-const pointRules = {
-  pointId: [
-    { required: true, message: '请输入标识符', trigger: 'blur' },
-    { min: 2, max: 50, message: '长度 2-50 字符', trigger: 'blur' },
-    { pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/, message: '以字母开头，仅支持字母、数字和下划线', trigger: 'blur' },
-    { validator: (_, v, cb) => v && (/__/.test(v) || v.endsWith('_')) ? cb(new Error('不允许连续下划线或以下划线结尾')) : cb(), trigger: 'blur' }
-  ],
-  name: [
-    { required: true, message: '请输入功能名称', trigger: 'blur' },
-    { max: 50, message: '不超过50字符', trigger: 'blur' },
-    { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_\-\s]+$/, message: '支持中文、英文、数字、下划线和短横线', trigger: 'blur' }
-  ],
-  dataType: [{ required: true, message: '请选择数据类型', trigger: 'change' }],
-  unit: [
-    { max: 20, message: '单位不超过20字符', trigger: 'blur' },
-    { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9%℃°/²³μ]*$/, message: '单位包含不支持的字符', trigger: 'blur' }
-  ],
-  rangeMin: [
-    { validator: (_, v, cb) => {
-      if (v === '' || v === null || v === undefined) return cb()
-      if (isNaN(Number(v))) return cb(new Error('必须是有效数字'))
-      if (pointForm.dataType === 'int' && !Number.isInteger(Number(v))) return cb(new Error('int 类型必须为整数'))
-      if (pointForm.dataType === 'int' && Number(v) < -2147483648) return cb(new Error('超出 int 最小值'))
-      cb()
-    }, trigger: 'blur' }
-  ],
-  rangeMax: [
-    { validator: (_, v, cb) => {
-      if (v === '' || v === null || v === undefined) return cb()
-      if (isNaN(Number(v))) return cb(new Error('必须是有效数字'))
-      if (pointForm.dataType === 'int' && !Number.isInteger(Number(v))) return cb(new Error('int 类型必须为整数'))
-      if (pointForm.dataType === 'int' && Number(v) > 2147483647) return cb(new Error('超出 int 最大值'))
-      if (pointForm.rangeMin !== '' && !isNaN(Number(pointForm.rangeMin)) && Number(v) <= Number(pointForm.rangeMin)) return cb(new Error('最大值必须大于最小值'))
-      cb()
-    }, trigger: 'blur' }
-  ],
-  step: [
-    { validator: (_, v, cb) => {
-      if (v === '' || v === null || v === undefined) return cb()
-      const n = Number(v)
-      if (isNaN(n) || n <= 0) return cb(new Error('步长必须为正数'))
-      if (pointForm.rangeMin !== '' && pointForm.rangeMax !== '') {
-        const range = Number(pointForm.rangeMax) - Number(pointForm.rangeMin)
-        if (!isNaN(range) && n > range) return cb(new Error('步长不能大于取值范围'))
-      }
-      cb()
-    }, trigger: 'blur' }
-  ],
-  trueLabel: [{ max: 20, message: '不超过20字符', trigger: 'blur' }],
-  falseLabel: [{ max: 20, message: '不超过20字符', trigger: 'blur' }],
-  maxLength: [
-    { validator: (_, v, cb) => {
-      if (v === null || v === undefined) return cb()
-      if (v < 1 || v > 10240) return cb(new Error('范围 1-10240'))
-      cb()
-    }, trigger: 'blur' }
-  ],
-  description: [
-    { max: 200, message: '描述不超过200字符', trigger: 'blur' }
-  ]
-}
 
 // 计算属性
 const properties = computed(() => (thingModelPoints.value || []).filter(p => p.pointType === 'PROPERTY'))
@@ -539,37 +303,6 @@ const formattedJson = computed(() => {
     events: events.value,
     commands: commands.value
   }, null, 2)
-})
-
-const currentPointJson = computed(() => {
-  const schema = {
-    identifier: pointForm.pointId || 'identifier',
-    name: pointForm.name || '功能名称',
-    type: activeTab.value === 'properties' ? 'property' : activeTab.value === 'events' ? 'event' : 'command',
-    dataType: { type: pointForm.dataType }
-  }
-  if (['int', 'float'].includes(pointForm.dataType)) {
-    schema.dataType.specs = {
-      min: pointForm.rangeMin !== '' ? Number(pointForm.rangeMin) : 0,
-      max: pointForm.rangeMax !== '' ? Number(pointForm.rangeMax) : 100,
-      unit: pointForm.unit || '',
-      step: pointForm.step || 1
-    }
-    schema.accessMode = pointForm.access
-  } else if (pointForm.dataType === 'bool') {
-    schema.dataType.specs = { 'true': pointForm.trueLabel || '是', 'false': pointForm.falseLabel || '否' }
-    schema.accessMode = pointForm.access
-  } else if (pointForm.dataType === 'string') {
-    schema.dataType.specs = { maxLength: pointForm.maxLength || 255 }
-    schema.accessMode = pointForm.access
-  } else if (pointForm.dataType === 'enum') {
-    const specs = {}
-    enumValues.value.forEach(ev => { if (ev.value) specs[ev.value] = ev.description })
-    schema.dataType.specs = specs
-    schema.accessMode = pointForm.access
-  }
-  if (pointForm.description) schema.description = pointForm.description
-  return JSON.stringify(schema, null, 2)
 })
 
 const formatTime = (time) => {
@@ -648,7 +381,7 @@ const handleImportTemplate = async () => {
   showImportDialog.value = true
   importLoading.value = true
   try {
-    const res = await thingModelApi.getThingModels({ category: product.value.category })
+    const res = await categoryTemplateApi.getTemplatesByCategory(product.value.category)
     if (res?.code === 200) {
       categoryTemplates.value = res.data || []
     }
@@ -667,7 +400,7 @@ const handleConfirmImport = async () => {
   try {
     // 确保 thingModelId 存在
     if (!thingModelId.value) {
-      const tmRes = await thingModelApi.createThingModel({
+      const tmRes = await productThingModelApi.createThingModel({
         name: product.value.name + '物模型',
         code: 'TM_' + product.value.pid,
         category: product.value.category,
@@ -684,40 +417,79 @@ const handleConfirmImport = async () => {
     // 解析并批量导入属性
     const props = template.propertiesJson ? JSON.parse(template.propertiesJson) : []
     for (const p of props) {
-      await thingModelApi.createPoint({
+      const specs = p.dataType?.specs || {}
+      const dataType = p.dataType?.type || 'int'
+      const pointData = {
         thingModelId: thingModelId.value,
         pointType: 'PROPERTY',
-        pointId: p.id,
+        pointId: p.pointId,
         name: p.name,
-        dataType: p.dataType,
-        access: p.access,
-        unit: p.unit || ''
-      })
+        dataType,
+        access: p.accessMode || 'readWrite',
+        unit: specs.unit || '',
+        description: p.description || ''
+      }
+      // 数值类型：解析 rangeJson
+      if (dataType === 'int' || dataType === 'float') {
+        if (specs.min !== undefined || specs.max !== undefined) {
+          pointData.rangeJson = JSON.stringify({
+            min: specs.min ?? 0,
+            max: specs.max ?? 100
+          })
+        }
+      }
+      // 枚举类型：解析 enumValuesJson
+      if (dataType === 'enum' && specs) {
+        const enumEntries = Object.entries(specs).filter(([k]) => k !== 'unit')
+        if (enumEntries.length > 0) {
+          pointData.enumValuesJson = JSON.stringify(
+            enumEntries.map(([value, description]) => ({ value, description: String(description) }))
+          )
+        }
+      }
+      // 数组类型
+      if (dataType === 'array') {
+        pointData.elementType = specs.elementType || 'int'
+        pointData.maxLength = specs.maxLength || 10
+        if (specs.defaultValue) {
+          pointData.defaultValue = JSON.stringify(specs.defaultValue)
+        }
+      }
+      // bool 类型
+      if (dataType === 'bool') {
+        pointData.trueLabel = specs.true || '是'
+        pointData.falseLabel = specs.false || '否'
+      }
+      await productThingModelApi.createPoint(pointData)
     }
 
     // 批量导入事件
     const evts = template.eventsJson ? JSON.parse(template.eventsJson) : []
     for (const e of evts) {
-      await thingModelApi.createPoint({
+      const dataType = e.dataType?.type || 'alarm'
+      await productThingModelApi.createPoint({
         thingModelId: thingModelId.value,
         pointType: 'EVENT',
-        pointId: e.id,
+        pointId: e.identifier,
         name: e.name,
-        dataType: e.type || 'alarm',
-        access: 'readOnly'
+        dataType,
+        access: 'readOnly',
+        description: e.description || ''
       })
     }
 
     // 批量导入命令
     const cmds = template.commandsJson ? JSON.parse(template.commandsJson) : []
     for (const c of cmds) {
-      await thingModelApi.createPoint({
+      const dataType = c.dataType?.type || 'sync'
+      await productThingModelApi.createPoint({
         thingModelId: thingModelId.value,
         pointType: 'COMMAND',
-        pointId: c.id,
+        pointId: c.identifier,
         name: c.name,
-        dataType: c.callType || 'sync',
-        access: 'readWrite'
+        dataType,
+        access: 'readWrite',
+        description: c.description || ''
       })
     }
 
@@ -738,61 +510,34 @@ const handlePreviewJson = () => {
 
 const handleAddPoint = () => {
   isEditPoint.value = false
-  resetPointForm()
+  editingPoint.value = null
   showPointDialog.value = true
 }
 
 const handleEditPoint = (row) => {
-  resetPointForm()
   isEditPoint.value = true
-  // 只拷贝 pointForm 中定义的字段，避免 row 上的额外属性污染 reactive 对象
-  pointForm.id = row.id
-  pointForm.pointId = row.pointId || ''
-  pointForm.name = row.name || ''
-  pointForm.dataType = row.dataType || 'int'
-  pointForm.access = row.access || 'readWrite'
-  pointForm.unit = row.unit || ''
-  pointForm.step = row.step || ''
-  pointForm.maxLength = row.maxLength || null
-  pointForm.defaultValue = row.defaultValue || ''
-  pointForm.trueLabel = row.trueLabel || ''
-  pointForm.falseLabel = row.falseLabel || ''
-  pointForm.description = row.description || ''
+  editingPoint.value = { ...row }
+  showPointDialog.value = true
+}
 
-  // 解析范围
-  if (row.rangeJson) {
-    try {
-      const range = JSON.parse(row.rangeJson)
-      pointForm.rangeMin = range.min ?? ''
-      pointForm.rangeMax = range.max ?? ''
-    } catch {}
+const handleClonePoint = (row) => {
+  isEditPoint.value = false
+  editingPoint.value = {
+    ...row,
+    id: null,
+    pointId: (row.pointId || '') + '_copy',
+    name: (row.name || '') + '（克隆）'
   }
-
-  // 解析枚举值
-  if (row.enumValuesJson) {
-    try {
-      enumValues.value = JSON.parse(row.enumValuesJson)
-    } catch {
-      enumValues.value = []
-    }
-  } else {
-    enumValues.value = []
-  }
-
   showPointDialog.value = true
 }
 
 const handleDeletePoint = async (row) => {
   await ElMessageBox.confirm('确定删除此功能点?', '提示', { type: 'warning' })
-
   try {
-    // 调用API删除功能点
     if (row.id && typeof row.id === 'number' && row.id > 1000000000) {
-      // 如果是临时ID（前端生成的），不需要调用API
       thingModelPoints.value = (thingModelPoints.value || []).filter(p => p.id !== row.id)
     } else if (row.id) {
-      // 调用后端API删除
-      await thingModelApi.deletePoint(row.id)
+      await productThingModelApi.deletePoint(row.id)
       thingModelPoints.value = (thingModelPoints.value || []).filter(p => p.id !== row.id)
     }
     ElMessage.success('删除成功')
@@ -802,185 +547,21 @@ const handleDeletePoint = async (row) => {
   }
 }
 
-const handleDataTypeChange = () => {
-  enumValues.value = []
-  pointForm.rangeMin = ''
-  pointForm.rangeMax = ''
-  pointForm.step = ''
-  pointForm.maxLength = null
-  pointForm.trueLabel = ''
-  pointForm.falseLabel = ''
-}
-
-const selectDataType = (type) => {
-  pointForm.dataType = type
-  handleDataTypeChange()
-}
-
-const handleClonePoint = (row) => {
-  isEditPoint.value = false
-  resetPointForm()
-  pointForm.pointId = (row.pointId || '') + '_copy'
-  pointForm.name = (row.name || '') + '（克隆）'
-  pointForm.dataType = row.dataType || 'int'
-  pointForm.access = row.access || 'readWrite'
-  pointForm.unit = row.unit || ''
-  pointForm.step = row.step || ''
-  pointForm.maxLength = row.maxLength || null
-  pointForm.defaultValue = row.defaultValue || ''
-  pointForm.trueLabel = row.trueLabel || ''
-  pointForm.falseLabel = row.falseLabel || ''
-  pointForm.description = row.description || ''
-
-  if (row.rangeJson) {
-    try { const r = JSON.parse(row.rangeJson); pointForm.rangeMin = r.min ?? ''; pointForm.rangeMax = r.max ?? '' } catch {}
-  }
-  enumValues.value = row.enumValuesJson ? (() => { try { return JSON.parse(row.enumValuesJson) } catch { return [] } })() : []
-  showPointDialog.value = true
-}
-
-const addEnumValue = () => {
-  enumValues.value.push({ value: '', description: '' })
-}
-
-const removeEnumValue = (index) => {
-  enumValues.value.splice(index, 1)
-}
-
-// 输入规范化
-const normalizePointForm = () => {
-  pointForm.pointId = (pointForm.pointId || '').trim().toLowerCase().replace(/\s+/g, '_')
-  pointForm.name = (pointForm.name || '').trim()
-  pointForm.unit = (pointForm.unit || '').trim()
-  pointForm.description = (pointForm.description || '').trim()
-  pointForm.defaultValue = (pointForm.defaultValue || '').trim()
-  pointForm.trueLabel = (pointForm.trueLabel || '').trim()
-  pointForm.falseLabel = (pointForm.falseLabel || '').trim()
-  enumValues.value.forEach(ev => {
-    ev.value = (ev.value || '').trim()
-    ev.description = (ev.description || '').trim()
-  })
-}
-
-// 额外业务校验（el-form rules 无法覆盖的部分）
-const validateBusinessRules = () => {
-  const dt = pointForm.dataType
-  // 单位校验
-  if (pointForm.unit && !/^[\u4e00-\u9fa5a-zA-Z0-9%℃°/²³μ]+$/.test(pointForm.unit)) {
-    ElMessage.warning('单位包含不支持的字符'); return false
-  }
-  if (pointForm.unit && pointForm.unit.length > 20) {
-    ElMessage.warning('单位不超过20字符'); return false
-  }
-  // 取值范围校验
-  if ((dt === 'int' || dt === 'float') && pointForm.rangeMin !== '' && pointForm.rangeMax !== '') {
-    const min = Number(pointForm.rangeMin), max = Number(pointForm.rangeMax)
-    if (isNaN(min) || isNaN(max)) { ElMessage.warning('取值范围必须是有效数字'); return false }
-    if (dt === 'int' && (!Number.isInteger(min) || !Number.isInteger(max))) { ElMessage.warning('int 类型取值范围必须为整数'); return false }
-    if (dt === 'int' && (min < -2147483648 || max > 2147483647)) { ElMessage.warning('int 范围超出 -2147483648 ~ 2147483647'); return false }
-    if (min >= max) { ElMessage.warning('最小值必须小于最大值'); return false }
-    // 步长校验
-    if (pointForm.step !== '' && pointForm.step !== null) {
-      const step = Number(pointForm.step)
-      if (isNaN(step) || step <= 0) { ElMessage.warning('步长必须为正数'); return false }
-      if (step > max - min) { ElMessage.warning('步长不能大于取值范围'); return false }
-    }
-  }
-  // 字符串最大长度
-  if (dt === 'string' && pointForm.maxLength != null) {
-    if (pointForm.maxLength < 1 || pointForm.maxLength > 10240) { ElMessage.warning('最大长度范围 1-10240'); return false }
-  }
-  // 枚举值校验
-  if (dt === 'enum') {
-    const evs = enumValues.value.filter(e => e.value)
-    if (evs.length === 0) { ElMessage.warning('枚举类型至少需要1个枚举值'); return false }
-    if (evs.length > 20) { ElMessage.warning('枚举值最多20个'); return false }
-    for (const ev of evs) {
-      if (!/^[a-zA-Z0-9_]+$/.test(ev.value)) { ElMessage.warning(`枚举值 "${ev.value}" 仅支持字母、数字和下划线`); return false }
-      if (ev.value.length > 30) { ElMessage.warning(`枚举值 "${ev.value}" 不超过30字符`); return false }
-      if (ev.description && ev.description.length > 50) { ElMessage.warning('枚举描述不超过50字符'); return false }
-    }
-    const vals = evs.map(e => e.value)
-    if (new Set(vals).size !== vals.length) { ElMessage.warning('枚举值不可重复'); return false }
-  }
-  // bool标签
-  if (dt === 'bool') {
-    if (pointForm.trueLabel && pointForm.trueLabel.length > 20) { ElMessage.warning('true含义不超过20字符'); return false }
-    if (pointForm.falseLabel && pointForm.falseLabel.length > 20) { ElMessage.warning('false含义不超过20字符'); return false }
-  }
-  // 默认值校验
-  if (pointForm.defaultValue !== '') {
-    const dv = pointForm.defaultValue
-    if (dt === 'int' && !/^-?\d+$/.test(dv)) { ElMessage.warning('默认值必须为整数'); return false }
-    if (dt === 'float' && isNaN(Number(dv))) { ElMessage.warning('默认值必须为数字'); return false }
-    if (dt === 'bool' && dv !== 'true' && dv !== 'false') { ElMessage.warning('默认值必须为 true 或 false'); return false }
-    if (dt === 'enum' && !enumValues.value.some(e => e.value === dv)) { ElMessage.warning('默认值必须是已定义的枚举值之一'); return false }
-    if ((dt === 'int' || dt === 'float') && pointForm.rangeMin !== '' && pointForm.rangeMax !== '') {
-      const n = Number(dv), min = Number(pointForm.rangeMin), max = Number(pointForm.rangeMax)
-      if (!isNaN(n) && !isNaN(min) && !isNaN(max) && (n < min || n > max)) { ElMessage.warning('默认值超出取值范围'); return false }
-    }
-  }
-  return true
-}
-
-const handleSavePoint = async () => {
-  if (savingPoint.value) return
-
-  // 先规范化输入
-  normalizePointForm()
-
-  const valid = await pointFormRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  // 业务规则校验
-  if (!validateBusinessRules()) return
-
-  savingPoint.value = true
-
-  // 构建保存数据 - 只传后端实体需要的字段，避免未知属性导致500
-  const saveData = {
-    id: pointForm.id,
-    pointId: pointForm.pointId,
-    name: pointForm.name,
-    dataType: pointForm.dataType,
-    access: pointForm.access,
-    unit: pointForm.unit,
-    maxLength: pointForm.maxLength,
-    defaultValue: pointForm.defaultValue,
-    description: pointForm.description,
-    pointType: activeTab.value === 'properties' ? 'PROPERTY' : activeTab.value === 'events' ? 'EVENT' : 'COMMAND'
-  }
-
-  // 处理范围
-  if ((pointForm.dataType === 'int' || pointForm.dataType === 'float') && pointForm.rangeMin && pointForm.rangeMax) {
-    saveData.rangeJson = JSON.stringify({ min: Number(pointForm.rangeMin), max: Number(pointForm.rangeMax) })
-  }
-
-  // 处理枚举值
-  if (pointForm.dataType === 'enum' && enumValues.value.length > 0) {
-    saveData.enumValuesJson = JSON.stringify(enumValues.value)
-  }
-
+const handlePointSaved = async (saveData) => {
   try {
     // 如果没有thingModelId，先创建物模型
     if (!thingModelId.value) {
-      const tmRes = await thingModelApi.createThingModel({
+      const tmRes = await productThingModelApi.createThingModel({
         name: product.value.name + '物模型',
         code: 'TM_' + product.value.pid,
         category: product.value.category,
         status: 'DRAFT'
       })
-      // 检查物模型创建是否成功
-      if (!tmRes || tmRes.code !== 200 || !tmRes.data) {
+      if (!tmRes || tmRes.code !== 200 || !tmRes.data?.id) {
         ElMessage.error('创建物模型失败: ' + (tmRes?.message || '未知错误'))
         return
       }
-      if (!tmRes.data.id) {
-        ElMessage.error('物模型创建失败：未返回有效ID')
-        return
-      }
       thingModelId.value = tmRes.data.id
-      // 更新产品的thingModelId
       const updateRes = await productApi.update(product.value.id, { thingModelId: thingModelId.value })
       if (!updateRes || updateRes.code !== 200) {
         ElMessage.error('更新产品关联物模型失败')
@@ -988,7 +569,6 @@ const handleSavePoint = async () => {
       }
     }
 
-    // 再次检查thingModelId
     if (!thingModelId.value) {
       ElMessage.error('物模型ID无效，无法保存功能点')
       return
@@ -996,41 +576,19 @@ const handleSavePoint = async () => {
 
     saveData.thingModelId = thingModelId.value
 
-    if (isEditPoint.value) {
-      // 更新功能点
-      await thingModelApi.updatePoint(pointForm.id, saveData)
+    if (isEditPoint.value && saveData.id) {
+      await productThingModelApi.updatePoint(saveData.id, saveData)
     } else {
-      // 创建功能点
-      const res = await thingModelApi.createPoint(saveData)
-      if (res && res.code === 200) {
-        saveData.id = res.data.id
-      }
+      delete saveData.id
+      await productThingModelApi.createPoint(saveData)
     }
 
-    // 重新加载功能点列表
     await loadThingModelPoints()
-
-    showPointDialog.value = false
     ElMessage.success(isEditPoint.value ? '更新成功' : '添加成功')
-    resetPointForm()
   } catch (e) {
     console.error('保存功能点失败:', e)
-    const msg = e.response?.data?.message || e.message || '未知错误'
-    ElMessage.error('保存失败: ' + msg)
-  } finally {
-    savingPoint.value = false
+    ElMessage.error('保存失败: ' + (e.response?.data?.message || e.message || '未知错误'))
   }
-}
-
-const resetPointForm = () => {
-  Object.assign(pointForm, {
-    id: null, pointId: '', name: '', dataType: 'int',
-    access: 'readWrite', unit: '', rangeMin: '', rangeMax: '',
-    step: '', maxLength: null, defaultValue: '',
-    trueLabel: '', falseLabel: '', description: ''
-  })
-  enumValues.value = []
-  isEditPoint.value = false
 }
 
 const handleExportJson = () => {
@@ -1074,7 +632,7 @@ const loadThingModelPoints = async () => {
   if (!thingModelId.value) return
 
   try {
-    const res = await thingModelApi.getPoints(thingModelId.value)
+    const res = await productThingModelApi.getPoints(thingModelId.value)
     console.log('获取物模型功能点:', res)
     if (res && res.code === 200 && res.data) {
       thingModelPoints.value = res.data
@@ -1213,18 +771,6 @@ const loadThingModelPoints = async () => {
   margin-bottom: 12px;
 }
 
-.enum-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.enum-item {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 .tm-summary {
   display: flex;
   gap: 8px;
@@ -1298,152 +844,4 @@ const loadThingModelPoints = async () => {
   word-break: break-all;
 }
 
-/* 功能点弹窗双栏布局 */
-.point-dialog-layout {
-  display: flex;
-  gap: 0;
-  min-height: 440px;
-}
-
-.point-form-col {
-  flex: 1;
-  padding-right: 16px;
-  overflow-y: auto;
-  max-height: 520px;
-}
-
-.point-preview-col {
-  width: 280px;
-  border-left: 1px solid #ebeef5;
-  padding-left: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.preview-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #303133;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.point-json-preview {
-  flex: 1;
-  background: #1e1e2e;
-  color: #a6e3a1;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  line-height: 1.6;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  margin: 0;
-  min-height: 360px;
-}
-
-.preview-hint {
-  font-size: 11px;
-  color: #c0c4cc;
-  text-align: center;
-}
-
-/* 数据类型卡片选择器 */
-.datatype-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  width: 100%;
-}
-
-.datatype-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1.5px solid #e4e7ed;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  background: #fafafa;
-}
-
-.datatype-card:hover {
-  border-color: var(--color-primary, #1E4DA3);
-  background: #fff5f7;
-}
-
-.datatype-active {
-  border-color: var(--color-primary, #1E4DA3) !important;
-  background: #fff0f3 !important;
-  box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.15);
-}
-
-.dt-icon {
-  font-size: 15px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  font-weight: 700;
-  flex-shrink: 0;
-  width: 22px;
-  text-align: center;
-}
-
-.dt-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.dt-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #303133;
-  white-space: nowrap;
-}
-
-.dt-desc {
-  font-size: 11px;
-  color: #909399;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 单位预设 */
-.unit-input-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.unit-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.unit-preset-tag {
-  cursor: pointer;
-  font-size: 12px;
-  padding: 0 8px;
-  height: 22px;
-  line-height: 22px;
-  border-radius: 4px;
-  transition: all 0.15s;
-}
-
-.unit-preset-tag:hover { opacity: 0.8; }
-
-.unit-active {
-  background: var(--color-primary, #1E4DA3) !important;
-  color: white !important;
-  border-color: transparent !important;
-}
 </style>

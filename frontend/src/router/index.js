@@ -30,16 +30,28 @@ const routes = [
         component: () => import('../views/product/ProductList.vue')
       },
       {
-        path: 'products/:id',
-        name: 'ProductDetail',
-        meta: { title: '产品详情', permission: 'PRODUCT:R' },
-        component: () => import('../views/product/ProductDetail.vue')
+        path: 'products/category-templates/new',
+        name: 'CategoryTemplateCreate',
+        meta: { title: '新建品类模板', permission: 'CATEGORY_MODEL:R' },
+        component: () => import('../views/thingmodel/CategoryTemplateEdit.vue')
+      },
+      {
+        path: 'products/category-templates/:id/edit',
+        name: 'CategoryTemplateEdit',
+        meta: { title: '编辑品类模板', permission: 'CATEGORY_MODEL:R' },
+        component: () => import('../views/thingmodel/CategoryTemplateEdit.vue')
       },
       {
         path: 'products/category-templates',
         name: 'CategoryTemplates',
         meta: { title: '品类标准模板', permission: 'CATEGORY_MODEL:R' },
         component: () => import('../views/thingmodel/CategoryThingModel.vue')
+      },
+      {
+        path: 'products/:id',
+        name: 'ProductDetail',
+        meta: { title: '产品详情', permission: 'PRODUCT:R' },
+        component: () => import('../views/product/ProductDetail.vue')
       },
       // 设备管理
       {

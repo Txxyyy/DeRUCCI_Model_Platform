@@ -55,13 +55,26 @@
             <el-tag type="success" size="small">命令 {{ row.commandCount || 0 }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'PUBLISHED' ? 'success' : 'info'" size="small">
+              {{ row.status === 'PUBLISHED' ? '已发布' : '草稿' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="创建时间" width="180">
           <template #default="{ row }">{{ formatDate(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">查看</el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              v-if="row.status !== 'PUBLISHED'"
+              type="success"
+              link
+              @click="handlePublish(row)"
+            >发布</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -69,182 +82,18 @@
 
       <el-empty v-if="filteredTemplates.length === 0" description="暂无模板，点击右上角新建模板" />
     </el-card>
-
-    <!-- 创建/编辑模板弹窗 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      :title="isEdit ? '编辑模板' : '新建模板'" 
-      width="800px"
-      :close-on-click-modal="false"
-    >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="模板名称" prop="name">
-              <el-input v-model="form.name" placeholder="如：智能床垫基础模板" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="模板编码" prop="code">
-              <el-input v-model="form.code" placeholder="如：TM_BASIC_MATTRESS" :disabled="isEdit" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="所属品类">
-          <el-tag>{{ getCategoryName(form.category) }}</el-tag>
-        </el-form-item>
-
-        <el-form-item label="模板描述">
-          <el-input v-model="form.description" type="textarea" rows="2" placeholder="请输入模板描述" />
-        </el-form-item>
-
-        <el-divider>功能点配置</el-divider>
-
-        <!-- 功能点Tab -->
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="属性" name="properties">
-            <div class="point-header">
-              <el-button type="primary" size="small" @click="addPoint('properties')">+ 添加属性</el-button>
-            </div>
-            <el-table :data="form.properties" border size="small">
-              <el-table-column label="物模型ID" min-width="120">
-                <template #default="{ row }">
-                  <el-input v-model="row.id" placeholder="如 bed_position" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="功能名称" min-width="100">
-                <template #default="{ row }">
-                  <el-input v-model="row.name" placeholder="如 睡床位置" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="数据类型" width="100">
-                <template #default="{ row }">
-                  <el-select v-model="row.dataType" placeholder="选择" size="small">
-                    <el-option label="int" value="int" />
-                    <el-option label="float" value="float" />
-                    <el-option label="bool" value="bool" />
-                    <el-option label="string" value="string" />
-                    <el-option label="enum" value="enum" />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column label="读写类型" width="100">
-                <template #default="{ row }">
-                  <el-select v-model="row.access" placeholder="选择" size="small">
-                    <el-option label="只读" value="readOnly" />
-                    <el-option label="可写" value="writeOnly" />
-                    <el-option label="可读可写" value="readWrite" />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column label="单位" width="80">
-                <template #default="{ row }">
-                  <el-input v-model="row.unit" placeholder="如 %" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="60">
-                <template #default="{ $index }">
-                  <el-button type="danger" link @click="removePoint('properties', $index)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-tab-pane>
-
-          <el-tab-pane label="事件" name="events">
-            <div class="point-header">
-              <el-button type="primary" size="small" @click="addPoint('events')">+ 添加事件</el-button>
-            </div>
-            <el-table :data="form.events" border size="small">
-              <el-table-column label="物模型ID" min-width="120">
-                <template #default="{ row }">
-                  <el-input v-model="row.id" placeholder="如 alarmTempHigh" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="功能名称" min-width="100">
-                <template #default="{ row }">
-                  <el-input v-model="row.name" placeholder="如 温度过高告警" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="事件类型" width="100">
-                <template #default="{ row }">
-                  <el-select v-model="row.type" placeholder="选择" size="small">
-                    <el-option label="告警" value="alarm" />
-                    <el-option label="信息" value="info" />
-                    <el-option label="错误" value="error" />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column label="参数" min-width="150">
-                <template #default="{ row }">
-                  <el-input v-model="row.params" placeholder="如 temperature:int" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="60">
-                <template #default="{ $index }">
-                  <el-button type="danger" link @click="removePoint('events', $index)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-tab-pane>
-
-          <el-tab-pane label="命令" name="commands">
-            <div class="point-header">
-              <el-button type="primary" size="small" @click="addPoint('commands')">+ 添加命令</el-button>
-            </div>
-            <el-table :data="form.commands" border size="small">
-              <el-table-column label="物模型ID" min-width="120">
-                <template #default="{ row }">
-                  <el-input v-model="row.id" placeholder="如 setBedPosition" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="功能名称" min-width="100">
-                <template #default="{ row }">
-                  <el-input v-model="row.name" placeholder="如 设置睡床位置" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="调用类型" width="100">
-                <template #default="{ row }">
-                  <el-select v-model="row.callType" placeholder="选择" size="small">
-                    <el-option label="同步" value="sync" />
-                    <el-option label="异步" value="async" />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column label="输入参数" min-width="120">
-                <template #default="{ row }">
-                  <el-input v-model="row.inputParams" placeholder="如 position:int" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="输出参数" min-width="120">
-                <template #default="{ row }">
-                  <el-input v-model="row.outputParams" placeholder="如 result:bool" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="60">
-                <template #default="{ $index }">
-                  <el-button type="danger" link @click="removePoint('commands', $index)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-tab-pane>
-        </el-tabs>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppIcon from '@/components/AppIcon.vue'
 import CategoryIcon from '@/components/CategoryIcon.vue'
-import { thingModelApi } from '@/api/thingModel'
+import { categoryTemplateApi } from '@/api/categoryTemplate'
+
+const router = useRouter()
 
 // 品类列表
 const categories = [
@@ -255,27 +104,6 @@ const categories = [
 
 const selectedCategory = ref('智能床垫')
 const templates = ref([])
-const dialogVisible = ref(false)
-const isEdit = ref(false)
-const submitLoading = ref(false)
-const formRef = ref(null)
-const activeTab = ref('properties')
-
-const form = reactive({
-  id: null,
-  name: '',
-  code: '',
-  category: '智能床垫',
-  description: '',
-  properties: [],
-  events: [],
-  commands: []
-})
-
-const rules = {
-  name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入模板编码', trigger: 'blur' }]
-}
 
 const currentCategoryName = computed(() => getCategoryName(selectedCategory.value))
 
@@ -301,43 +129,24 @@ const getTemplateCount = (category) => {
 
 const handleSelectCategory = (category) => {
   selectedCategory.value = category
-  form.category = category
 }
 
 const handleCreate = () => {
-  isEdit.value = false
-  Object.assign(form, {
-    id: null, name: '', code: '', category: selectedCategory.value,
-    description: '', properties: [], events: [], commands: []
-  })
-  activeTab.value = 'properties'
-  dialogVisible.value = true
+  router.push('/products/category-templates/new?category=' + encodeURIComponent(selectedCategory.value))
 }
 
 const handleEdit = (row) => {
-  isEdit.value = true
-  Object.assign(form, { ...row })
-  // 解析JSON字段
-  try {
-    form.properties = row.propertiesJson ? JSON.parse(row.propertiesJson) : []
-    form.events = row.eventsJson ? JSON.parse(row.eventsJson) : []
-    form.commands = row.commandsJson ? JSON.parse(row.commandsJson) : []
-  } catch (e) {
-    form.properties = []
-    form.events = []
-    form.commands = []
-  }
-  dialogVisible.value = true
+  router.push('/products/category-templates/' + row.id + '/edit')
 }
 
 const handleView = (row) => {
-  handleEdit(row)
+  router.push('/products/category-templates/' + row.id + '/edit?readonly=1')
 }
 
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确定删除模板 ${row.name}?`, '提示', { type: 'warning' })
   try {
-    const res = await thingModelApi.deleteThingModel(row.id)
+    const res = await categoryTemplateApi.deleteTemplate(row.id)
     if (res?.code === 200) {
       templates.value = templates.value.filter(t => t.id !== row.id)
       ElMessage.success('删除成功')
@@ -351,82 +160,28 @@ const handleDelete = async (row) => {
   }
 }
 
-const addPoint = (type) => {
-  if (type === 'properties') {
-    form.properties.push({ id: '', name: '', dataType: 'int', access: 'readWrite', unit: '' })
-  } else if (type === 'events') {
-    form.events.push({ id: '', name: '', type: 'alarm', params: '' })
-  } else if (type === 'commands') {
-    form.commands.push({ id: '', name: '', callType: 'sync', inputParams: '', outputParams: '' })
-  }
-}
-
-const removePoint = (type, index) => {
-  if (type === 'properties') {
-    form.properties.splice(index, 1)
-  } else if (type === 'events') {
-    form.events.splice(index, 1)
-  } else if (type === 'commands') {
-    form.commands.splice(index, 1)
-  }
-}
-
-const handleSubmit = async () => {
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  submitLoading.value = true
-  try {
-    const data = {
-      name: form.name,
-      code: form.code,
-      category: form.category,
-      description: form.description,
-      propertiesJson: JSON.stringify(form.properties),
-      eventsJson: JSON.stringify(form.events),
-      commandsJson: JSON.stringify(form.commands),
-      propertyCount: form.properties.length,
-      eventCount: form.events.length,
-      commandCount: form.commands.length
-    }
-
-    if (isEdit.value) {
-      const res = await thingModelApi.updateThingModel(form.id, data)
-      if (res?.code === 200) {
-        const idx = templates.value.findIndex(t => t.id === form.id)
-        if (idx !== -1) templates.value[idx] = { ...templates.value[idx], ...res.data }
-        ElMessage.success('更新成功')
-      } else {
-        ElMessage.error(res?.message || '更新失败')
-        return
-      }
-    } else {
-      const res = await thingModelApi.createThingModel(data)
-      if (res?.code === 200) {
-        templates.value.push(res.data)
-        ElMessage.success('创建成功')
-      } else {
-        ElMessage.error(res?.message || '创建失败')
-        return
-      }
-    }
-
-    dialogVisible.value = false
-  } catch (e) {
-    ElMessage.error('保存失败: ' + (e.message || '未知错误'))
-  } finally {
-    submitLoading.value = false
-  }
-}
-
 const loadTemplates = async () => {
   try {
-    const res = await thingModelApi.getThingModels()
+    const res = await categoryTemplateApi.getAllTemplates()
     if (res?.code === 200) {
       templates.value = res.data || []
     }
   } catch (e) {
     console.error('加载模板失败:', e)
+  }
+}
+
+const handlePublish = async (row) => {
+  try {
+    const res = await categoryTemplateApi.publishTemplate(row.id)
+    if (res?.code === 200) {
+      row.status = 'PUBLISHED'
+      ElMessage.success('发布成功')
+    } else {
+      ElMessage.error(res?.message || '发布失败')
+    }
+  } catch (e) {
+    ElMessage.error('发布失败')
   }
 }
 
@@ -512,9 +267,5 @@ onMounted(() => {
 
 .template-list-card {
   min-height: 400px;
-}
-
-.point-header {
-  margin-bottom: 12px;
 }
 </style>

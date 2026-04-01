@@ -72,7 +72,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { thingModelApi } from '@/api/thingModel'
+import { productThingModelApi } from '@/api/productThingModel'
 
 const router = useRouter()
 
@@ -88,7 +88,7 @@ const previewData = reactive({
 
 const loadTemplates = async () => {
   try {
-    const res = await thingModelApi.getThingModels()
+    const res = await productThingModelApi.getThingModels()
     if (res?.code === 200) templates.value = res.data || []
   } catch (e) {
     console.error('加载模板失败:', e)
