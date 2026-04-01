@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: derucci-config
+  namespace: derucci-iot
+data:
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "derucci_iot"
+  DB_USERNAME: "derucci"
+  SPRING_PROFILES_ACTIVE: "prod"
