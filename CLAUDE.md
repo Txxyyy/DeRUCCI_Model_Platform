@@ -1,3 +1,7 @@
+---
+model: minimax-cn-coding-plan/MiniMax-M2.7
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code when working with code in this repository.
@@ -10,18 +14,20 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Tech Stack
 
-- **Backend**: Spring Boot 微服务（6 个服务，H2 持久化）
+- **Backend**: Spring Boot 模块化单体（5 个业务模块 + app 启动模块，H2 开发 / PostgreSQL 生产）
 - **Frontend**: Vue 3 + Element Plus + Pinia
-- **当前未实现**: Redis / Kafka / API Gateway / Spring Cloud（架构图中有但尚未落地）
+- **部署**: Docker Compose（本地）/ Kubernetes（生产），Flyway 管理数据库迁移
+- **当前未实现**: Redis / Kafka / MQTT（架构图中有但尚未落地）
 
 ## Common Commands
 
 ```bash
-# Backend（各服务目录下）
-mvn spring-boot:run
-mvn clean install        # common 模块改动后必须先 install
-mvn fmt:format          # 格式化 Java 代码（首次单独 commit）
-mvn fmt:check           # CI 格式检查
+# Backend（backend/ 目录下）
+mvn spring-boot:run -pl app -am   # 启动单体应用（端口 8080）
+mvn clean install                  # 全量构建
+mvn clean install -DskipTests      # 跳过测试构建
+mvn fmt:format                     # 格式化 Java 代码（首次单独 commit）
+mvn fmt:check                      # CI 格式检查
 
 # Frontend
 cd frontend && npm install
@@ -38,7 +44,8 @@ npm run format           # Prettier 格式化
 
 ## Development Standards
 
-开发流程规范（分级流程 v3.1）详见 `docs/plans/2026-03-20-dev-workflow-optimization-design.md`。
+**每次开始任务前，必须先读取以下文档，再动手：**
+- **开发流程规范**：`docs/plans/2026-03-20-dev-workflow-optimization-design.md`（定级、TDD、检查点）
 
 核心原则：**流程服务于质量，不服务于流程本身。轻重匹配，避免形式主义。**
 
@@ -46,24 +53,10 @@ npm run format           # Prettier 格式化
 
 ## 编码约定
 
-> 完整规范（含工具配置）见 `docs/standards/coding-standards.md`。
+**每次开始任务前，必须先读取：`docs/standards/coding-standards.md`**
 
-### Java 后端
+## 任务记忆
 
-- Entity：Lombok `@Data` + JPA，字段顺序 id → 业务字段 → 状态 → 时间戳
-- Controller 只做参数校验和转发，业务逻辑放 Service
-- 参考范例：`device-service` 的 `DeviceService.java`、`DeviceController.java`
+当前任务的进度、决策记录、待解决事项 → 见 [PROJECT_TASKS.md](./PROJECT_TASKS.md)
 
-### Vue 前端
-
-- 组件使用 `<script setup>` + Composition API
-- 布局优先用 flex，不用 `el-row` 栅格（防止按钮换行变形）
-- API 调用统一走 `src/api/` 目录，字段命名以后端 Entity 为准，不自行起别名
-- 权限控制：路由 meta + `v-permission` 指令，状态管理：Pinia（`src/stores/`）
-
-### API 响应格式
-
-统一使用 `Result<T>` 封装（`common-core`）：
-- 成功：`Result.success(data)` → `{code: 200, message: "success", data: ..., timestamp: ...}`
-- 分页：`Result.success(data, page, pageSize, total)`
-- 错误：`Result.error(code, message)` → 常用 401 / 403 / 404 / 500
+**每次接手任务时，必须先阅读 PROJECT_TASKS.md 了解当前进展。开发过程中主动维护：做决策时记录理由，完成节点时更新进展，遇到卡点时写入待解决。**

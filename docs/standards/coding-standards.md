@@ -52,7 +52,7 @@ mvn fmt:check -pl service/device-service   # 单模块检查
 - **Entity**：Lombok `@Data` + JPA，字段顺序 id → 业务字段 → 状态 → 时间戳
 - **Controller**：只做参数校验和转发，业务逻辑放 Service
 - **update() 方法**：必须覆盖所有可编辑字段，不能遗漏（feedback 规则）
-- **参考范例**：`device-service` 的 `DeviceService.java`、`DeviceController.java`
+- **参考范例**：`module-device` 的 `DeviceService.java`、`DeviceController.java`
 
 ### Vue 前端
 
